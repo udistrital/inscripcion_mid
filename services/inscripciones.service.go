@@ -12,8 +12,9 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/httplib"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/sga_inscripcion_mid/helpers"
-	"github.com/udistrital/sga_inscripcion_mid/utils"
+	"github.com/udistrital/inscripcion_mid/helpers"
+
+	// "github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"github.com/udistrital/utils_oas/time_bogota"
@@ -480,7 +481,7 @@ func ConsultarEventos(idEvento string) (APIResponseDTO requestresponse.APIRespon
 			var Proyectos_academicos_Get []map[string]interface{}
 			wge.SetLimit(-1)
 			for _, EventosInscripcion := range EventosInscripcionMap {
-				EventosInscripcion = EventosInscripcion
+
 				wge.Go(func() error {
 
 					if len(EventosInscripcion) > 0 {
@@ -938,9 +939,11 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 			mensajeError := errCiclo.Error()
 			return requestresponse.APIResponseDTO(false, 400, nil, mensajeError)
 		}
-		añoParaLaConsultaDeDerechosPecuniarios := helpers.CalcularAñoParaLaConsultaDeDerechosPecuniarios(objTransaccion["aniopago"].(float64), objTransaccion["perpago"].(float64))
 
-		if SolicitudInscripcion["Nivel"].(float64) == 1 {
+		switch SolicitudInscripcion["Nivel"].(float64) {
+		case 1:
+			// pregrado
+			// TipoParametro = "13"
 			TipoParametro = "8672"
 			id_periodo := int(SolicitudInscripcion["PeriodoId"].(float64))
 			credencial, err := helpers.GenerarCredencialInscripcionPregrado(float64(id_periodo))
@@ -949,8 +952,18 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 				return requestresponse.APIResponseDTO(false, 500, nil, "Error al generar la credencial de inscripción.")
 			}
 			inscripcion["Credencial"] = credencial
-		} else if SolicitudInscripcion["Nivel"].(float64) == 2 {
-			TipoParametro = "12"
+		case 2:
+			// Todos los posgrados
+			switch SolicitudInscripcion["TipoInscripcionId"].(float64) {
+			case 15:
+				// Inscripciones nuevas
+				TipoParametro = "12"
+			case 11:
+				// Reingresos
+				TipoParametro = "14"
+			default:
+				TipoParametro = "12"
+			}
 		}
 
 		persona_id := fmt.Sprintf("%d", int(SolicitudInscripcion["PersonaId"].(float64)))
@@ -1024,8 +1037,12 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 						inscripcionEvolucionEstado := helpers.GenerarInscripcionEvolucionEstado(int(inscripcionRealizada["Id"].(float64)), nil, helpers.IDStruct{Id: estado}, helpers.ObtenerTerceroInscripcion(SolicitudInscripcion))
 						errorCambioEstado := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion_evolucion_estado", "POST", &respCambio, inscripcionEvolucionEstado)
 
-						urlParametro := "http://" + beego.AppConfig.String("ParametroService") + "parametro_periodo?query=Activo:true,ParametroId.TipoParametroId.Id:2,ParametroId.CodigoAbreviacion:" + TipoParametro + ",PeriodoId.Year:" + fmt.Sprintf("%v", añoParaLaConsultaDeDerechosPecuniarios) + ",PeriodoId.CodigoAbreviacion:VG"
-						errParam := request.GetJson(urlParametro, &parametro)
+						aniopagoFloat, ok := objTransaccion["aniopago"].(float64)
+						if !ok {
+							return
+						}
+						aniopago := int(aniopagoFloat)
+						errParam := helpers.BuscarParametroperiodo(TipoParametro, aniopago, &parametro)
 						if errorCambioEstado == nil && respCambio["Status"] != "400" && errParam == nil && fmt.Sprintf("%v", parametro["Data"].([]interface{})[0]) != "map[]" {
 							Dato := parametro["Data"].([]interface{})[0]
 							if errJson := json.Unmarshal([]byte(Dato.(map[string]interface{})["Valor"].(string)), &Valor); errJson == nil {
@@ -1050,16 +1067,16 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 									if errInscripcionUpdate == nil {
 										APIResponseDTO = requestresponse.APIResponseDTO(true, 200, inscripcionUpdate, nil)
 
-										fecha_actual := time.Now()
-										dataEmail := map[string]interface{}{
-											"dia":    fecha_actual.Day(),
-											"mes":    utils.GetNombreMes(fecha_actual.Month()),
-											"anio":   fecha_actual.Year(),
-											"nombre": SolicitudInscripcion["Nombre"].(string) + " " + SolicitudInscripcion["Apellido"].(string),
-											"estado": "inscripción solicitada",
-										}
-										fmt.Println(dataEmail)
-										utils.SendNotificationInscripcionSolicitud(dataEmail, objTransaccion["correo"].(string))
+										// fecha_actual := time.Now()
+										// dataEmail := map[string]interface{}{
+										// 	"dia":    fecha_actual.Day(),
+										// 	"mes":    utils.GetNombreMes(fecha_actual.Month()),
+										// 	"anio":   fecha_actual.Year(),
+										// 	"nombre": SolicitudInscripcion["Nombre"].(string) + " " + SolicitudInscripcion["Apellido"].(string),
+										// 	"estado": "inscripción solicitada",
+										// }
+										// fmt.Println(dataEmail)
+										// utils.SendNotificationInscripcionSolicitud(dataEmail, objTransaccion["correo"].(string))
 									} else {
 										logs.Error(errInscripcionUpdate)
 										APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcionUpdate.Error())
