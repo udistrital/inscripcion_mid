@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/utils"
+	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -299,9 +299,38 @@ func ValidarPeriodo(periodoId float64, año float64, ciclo float64) error {
 	return nil
 }
 
+// Verificar en donde se usa y cambiarla por la siguiente
 func CalcularAñoParaLaConsultaDeDerechosPecuniarios(año float64, ciclo float64) int {
 	if ciclo == 1 {
 		return int(año) - 1
 	}
 	return int(año)
+}
+
+func BuscarParametroperiodo(TipoParametro string, anio int, target *map[string]interface{}) error {
+
+	anioInt := anio
+	for intento := 0; intento <= 2; intento++ {
+		anioConsulta := anioInt - intento
+
+		// limita consulta de parametros a un año arbitrario
+		if anioConsulta < 2024 {
+			break
+		}
+
+		urlEndpoint := "parametro_periodo?query=Activo:true,ParametroId.TipoParametroId.Id:2,ParametroId.CodigoAbreviacion:"
+		urlParametro := fmt.Sprintf("http://%s%s%s,PeriodoId.Year:%d,PeriodoId.CodigoAbreviacion:VG",
+			beego.AppConfig.String("ParametroService"), urlEndpoint, TipoParametro, anioConsulta)
+
+		err := request.GetJson(urlParametro, target)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Error consultando parámetro para año %d: %v", anioConsulta, err))
+			continue
+		}
+
+		if data, ok := (*target)["Data"].([]interface{}); ok && len(data) > 0 {
+			return nil
+		}
+	}
+	return fmt.Errorf("no se encontró parámetro válido hasta 2 años hacia atrás desde %d", anioInt)
 }

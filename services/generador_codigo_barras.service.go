@@ -30,7 +30,7 @@ func HandlePanic(c *beego.Controller) {
 	}
 }
 
-func GenerarCodigoBarras( data []byte) (APIResponseDTO requestresponse.APIResponse) {
+func GenerarCodigoBarras(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var InformacionCodigo map[string]interface{}
 	//alertas := append([]interface{}{"Response:"})
 	if err := json.Unmarshal(data, &InformacionCodigo); err == nil {
@@ -60,7 +60,7 @@ func GenerarCodigoBarras( data []byte) (APIResponseDTO requestresponse.APIRespon
 
 	} else {
 
-		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil , err.Error())
+		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, err.Error())
 		// alerta.Type = "error"
 		// alerta.Code = "400"
 		// alertas = append(alertas, err.Error())
