@@ -6,7 +6,7 @@ import (
 	"sync"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/models"
+	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"github.com/udistrital/utils_oas/time_bogota"

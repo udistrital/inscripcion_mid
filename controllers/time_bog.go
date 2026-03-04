@@ -2,7 +2,7 @@ package controllers
 
 import (
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/helpers"
+	"github.com/udistrital/inscripcion_mid/helpers"
 )
 
 // Time_bogController operations for Time_bog
