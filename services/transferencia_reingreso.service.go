@@ -1514,7 +1514,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 
 	//Se consultan todas las inscripciones relacionadas a ese tercero
 	// Tranferencia interna
-	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSINT&limit=0", &InternaGet)
+	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSINT&limit=0", &InternaGet)
 	if errInscripcion == nil {
 		if InternaGet != nil && fmt.Sprintf("%v", InternaGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, InternaGet...)
@@ -1522,7 +1522,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	}
 
 	// Tranferencia externa
-	errExterna := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSEXT&limit=0", &ExternaGet)
+	errExterna := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSEXT&limit=0", &ExternaGet)
 	if errExterna == nil {
 		if ExternaGet != nil && fmt.Sprintf("%v", ExternaGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, ExternaGet...)
@@ -1530,7 +1530,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	}
 
 	// Reingreso
-	errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:REING&limit=0", &reingresoGet)
+	errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:REING&limit=0", &reingresoGet)
 	if errReingreso == nil {
 		if reingresoGet != nil && fmt.Sprintf("%v", reingresoGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, reingresoGet...)
