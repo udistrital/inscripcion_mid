@@ -23,7 +23,8 @@ import (
 
 func EstadoInscripcion(idPersona string, idPeriodo string) (APIResponseDTO requestresponse.APIResponse) {
 
-	recibosResultado, err := helpers.VerificarRecibos(idPersona, idPeriodo)
+	// se fija a solo verificar recibos de inscripciones nuevas
+	recibosResultado, err := helpers.VerificarRecibos(idPersona, idPeriodo, "12")
 
 	if err == "" {
 		APIResponseDTO = requestresponse.APIResponseDTO(true, 200, recibosResultado, nil)
@@ -903,7 +904,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 			"nombre":              SolicitudInscripcion["Nombre"].(string),
 			"apellido":            SolicitudInscripcion["Apellido"].(string),
 			"correo":              SolicitudInscripcion["Correo"].(string),
-			"proyecto":            SolicitudInscripcion["ProgramaAcademicoCodigo"].(float64),
+			"proyecto":            SolicitudInscripcion["ProgramaAcademicoId"].(float64),
 			"tiporecibo":          15, // se define 15 por que es el id definido en el api de recibos para inscripcion
 			"concepto":            "",
 			"valorordinario":      0,
@@ -970,7 +971,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 		id_periodo := fmt.Sprintf("%d", int(SolicitudInscripcion["PeriodoId"].(float64)))
 		id_programa_academico := fmt.Sprintf("%d", int(SolicitudInscripcion["ProgramaAcademicoId"].(float64)))
 
-		recibosResultado, err := helpers.VerificarRecibos(persona_id, id_periodo)
+		recibosResultado, err := helpers.VerificarRecibos(persona_id, id_periodo, TipoParametro)
 
 		if err == "" {
 			if inscripciones, ok := recibosResultado["Inscripciones"]; ok {
@@ -1009,7 +1010,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 				codigoSnies := proyectoAcademico["CodigoSnies"].(string)
 
 				var HomologacionXML map[string]interface{}
-				codigoProyecto := fmt.Sprintf("%.0f", SolicitudInscripcion["ProgramaAcademicoCodigo"].(float64))
+				codigoProyecto := proyectoAcademico["Codigo"].(string)
 				errHomologacion := request.GetJsonWSO2("http://"+beego.AppConfig.String("HomologacionDependenciaService")+"proyecto_acad_snies/"+codigoSnies, &HomologacionXML)
 				resultadoHomologacion := HomologacionXML["proyecto_snies"].(map[string]interface{})
 				if errHomologacion == nil && fmt.Sprintf("%v", resultadoHomologacion) != "map[]" {
@@ -1052,6 +1053,8 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 								objTransaccion["concepto"] = Dato.(map[string]interface{})["ParametroId"].(map[string]interface{})["Nombre"].(string)
 
 								SolicitudRecibo := objTransaccion
+
+								SolicitudRecibo["proyecto"] = SolicitudInscripcion["ProgramaAcademicoCodigo"]
 
 								reciboSolicitud := httplib.Post("http://" + beego.AppConfig.String("GenerarReciboJbpmService") + "recibos_pago_proxy")
 								reciboSolicitud.Header("Accept", "application/json")

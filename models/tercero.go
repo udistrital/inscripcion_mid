@@ -141,3 +141,77 @@ type ProyectosCollection struct {
 type ProyectosResponse struct {
 	Proyectos ProyectosCollection `json:"proyectos"`
 }
+
+// inscripciones model
+type TipoInscripcion struct {
+	Id                int    `json:"Id"`
+	Nombre            string `json:"Nombre"`
+	Descripcion       string `json:"Descripcion"`
+	CodigoAbreviacion string `json:"CodigoAbreviacion"`
+	Activo            bool   `json:"Activo"`
+	NumeroOrden       int    `json:"NumeroOrden"`
+	NivelId           int    `json:"NivelId"`
+	FechaCreacion     string `json:"FechaCreacion"`
+	FechaModificacion string `json:"FechaModificacion"`
+	Especial          bool   `json:"Especial"`
+}
+
+type EstadoInscripcion struct {
+	Id                int    `json:"Id"`
+	Nombre            string `json:"Nombre"`
+	Descripcion       string `json:"Descripcion"`
+	CodigoAbreviacion string `json:"CodigoAbreviacion"`
+	Activo            bool   `json:"Activo"`
+	NumeroOrden       int    `json:"NumeroOrden"`
+	FechaCreacion     string `json:"FechaCreacion"`
+	FechaModificacion string `json:"FechaModificacion"`
+}
+
+type Inscripcion struct {
+	Id                  int               `json:"Id"`
+	PersonaId           int               `json:"PersonaId"`
+	ProgramaAcademicoId int               `json:"ProgramaAcademicoId"`
+	ReciboInscripcion   string            `json:"ReciboInscripcion"`
+	PeriodoId           int               `json:"PeriodoId"`
+	EnfasisId           int               `json:"EnfasisId"`
+	NotaFinal           float64           `json:"NotaFinal"`
+	AceptaTerminos      bool              `json:"AceptaTerminos"`
+	FechaAceptaTerminos string            `json:"FechaAceptaTerminos"`
+	Activo              bool              `json:"Activo"`
+	FechaCreacion       string            `json:"FechaCreacion"`
+	FechaModificacion   string            `json:"FechaModificacion"`
+	Credencial          int               `json:"Credencial"`
+	Opcion              int               `json:"Opcion"`
+	EstadoInscripcion   EstadoInscripcion `json:"EstadoInscripcionId"`
+	TipoInscripcion     TipoInscripcion   `json:"TipoInscripcionId"`
+	TipoCupo            int               `json:"TipoCupo"`
+}
+
+// RecibosOracle model
+type ReciboResponse struct {
+	ReciboCollection ReciboCollection `json:"reciboCollection"`
+}
+
+type ReciboCollection struct {
+	Recibo []Recibo `json:"recibo"`
+}
+
+type Recibo struct {
+	Estado              string `json:"estado"`
+	Ano                 int    `json:"ano"`
+	Cuota               int    `json:"cuota"`
+	Periodo             int    `json:"periodo"`
+	FechaPagado         string `json:"fecha_pagado"`
+	Secuencia           int    `json:"secuencia"`
+	Documento           string `json:"documento"`
+	FechaOrdinario      string `json:"fecha_ordinario"`
+	Pago                string `json:"pago"`
+	Nombre              string `json:"nombre"`
+	Fecha               string `json:"fecha"`
+	ValorExtraordinario int    `json:"valor_extraordinario"`
+	Observaciones       string `json:"observaciones"`
+	Carrera             int    `json:"carrera"`
+	ValorPagado         int    `json:"valor_pagado"`
+	FechaExtraordinario string `json:"fecha_extraordinario"`
+	ValorOrdinario      int    `json:"valor_ordinario"`
+}

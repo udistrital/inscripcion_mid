@@ -91,7 +91,7 @@ func IdInfoCompTercero(grupo string, codAbrev string) (Id string, ok bool) {
 }
 
 // Verificar estado de lso recibos ...
-func VerificarRecibos(personaId string, periodoId string) (resultadoAuxResponse map[string]interface{}, Error string) {
+func VerificarRecibos(personaId string, periodoId string, TipoParametro string) (resultadoAuxResponse map[string]interface{}, Error string) {
 	var Inscripciones []map[string]interface{}
 	var ReciboXML map[string]interface{}
 	var resultadoAux []map[string]interface{}
@@ -105,7 +105,9 @@ func VerificarRecibos(personaId string, periodoId string) (resultadoAuxResponse 
 			// Ciclo for que recorre todas las inscripciones del tercero
 			resultadoAux = make([]map[string]interface{}, len(Inscripciones))
 			for i := 0; i < len(Inscripciones); i++ {
-				if Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Transferencia interna" || Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Transferencia externa" || Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Reingreso" {
+				tipo := Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"]
+
+				if (TipoParametro == "12" && (tipo == "Transferencia interna" || tipo == "Transferencia externa" || tipo == "Reingreso")) || (TipoParametro == "14" && tipo != "Reingreso") {
 					Inscripciones = append(Inscripciones[:i], Inscripciones[i+1:]...)
 					i = i - 1
 				} else {

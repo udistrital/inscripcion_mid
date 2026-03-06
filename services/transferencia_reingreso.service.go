@@ -1368,7 +1368,6 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 	var codigosRes []map[string]interface{}
 	var proyectoGet []map[string]interface{}
 	var proyectos []map[string]interface{}
-	// var proyectoXML map[string]interface{}
 	var proyectoXML models.ProyectosResponse
 	var proyectosJBPM []models.DatosProyectoOracle
 
