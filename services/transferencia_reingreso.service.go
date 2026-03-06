@@ -8,6 +8,7 @@ import (
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/inscripcion_mid/helpers"
+	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
@@ -1360,10 +1361,16 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 	var jsondata map[string]interface{}
 	var tipoRes []map[string]interface{}
 	var identificacion []map[string]interface{}
-	var codigos []map[string]interface{}
+	var datosEstudiante []models.DatosIdentificacion
+	var codigos []string
+	var datosEstudianteXML models.DatosEstudianteResponse
+	var datosEstidianteJBMP []models.DatosEstudianteOracle
 	var codigosRes []map[string]interface{}
 	var proyectoGet []map[string]interface{}
 	var proyectos []map[string]interface{}
+	// var proyectoXML map[string]interface{}
+	var proyectoXML models.ProyectosResponse
+	var proyectosJBPM []models.DatosProyectoOracle
 
 	errCalendario := request.GetJson("http://"+beego.AppConfig.String("EventoService")+"calendario/"+idCalendario, &calendario)
 	if errCalendario == nil {
@@ -1372,12 +1379,12 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 				calendario["DependenciaId"] = jsondata["proyectos"]
 			}
 
-			errTipoInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"tipo_inscripcion?query=NivelId:"+fmt.Sprintf("%v", calendario["Nivel"]), &tipoInscripcion)
+			errTipoInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"tipo_inscripcion?query=Activo:True,NivelId:"+fmt.Sprintf("%v", calendario["Nivel"]), &tipoInscripcion)
 			if errTipoInscripcion == nil {
 				if tipoInscripcion != nil {
 
 					for _, tipo := range tipoInscripcion {
-						if tipo["CodigoAbreviacion"] == "TRANSINT" || tipo["CodigoAbreviacion"] == "TRANSEXT" || tipo["CodigoAbreviacion"] == "REING" {
+						if /*tipo["CodigoAbreviacion"] == "TRANSINT" || tipo["CodigoAbreviacion"] == "TRANSEXT" ||*/ tipo["CodigoAbreviacion"] == "REING" {
 							tipoRes = append(tipoRes, tipo)
 						}
 					}
@@ -1388,48 +1395,98 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 					if errIdentificacion == nil && fmt.Sprintf("%v", identificacion[0]) != "map[]" {
 						if identificacion[0]["Status"] != 404 {
 
-							errCodigoEst := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?query=TerceroId.Id:"+
-								fmt.Sprintf("%v", idPersona)+",InfoComplementariaId.Id:93&limit=0", &codigos)
-							if errCodigoEst == nil && fmt.Sprintf("%v", codigos[0]) != "map[]" {
+							errCodigoEst := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+
+								fmt.Sprintf("%v", idPersona)+",TipoDocumentoId.CodigoAbreviacion:CODE&limit=0", &datosEstudiante)
+							if errCodigoEst == nil && fmt.Sprintf("%v", datosEstudiante[0]) != "map[]" {
+
+								for _, dato := range datosEstudiante {
+									codigos = append(codigos, dato.Numero)
+								}
 
 								for _, codigo := range codigos {
-									errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=Codigo:"+codigo["Dato"].(string)[5:8], &proyectoGet)
-									if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
-										for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
-											if proyectoGet[0]["Id"] == proyectoCalendario {
+									errCodigoEstJBPM := request.GetJsonWSO2("http://"+beego.AppConfig.String("AcademicaEspacioAcademicoService")+"datos_estudiante/"+fmt.Sprint(codigo), &datosEstudianteXML)
 
-												codigo["Nombre"] = codigo["Dato"].(string) + " Proyecto: " + codigo["Dato"].(string)[5:8] + " - " + proyectoGet[0]["Nombre"].(string)
-												codigo["IdProyecto"] = proyectoGet[0]["Id"]
+									if errCodigoEstJBPM == nil && len(datosEstudianteXML.EstudianteCollection.DatosEstudiante) > 0 {
+										datosEstidianteJBMP = append(datosEstidianteJBMP, datosEstudianteXML.EstudianteCollection.DatosEstudiante[0])
+									}
+								}
 
-												codigosRes = append(codigosRes, codigo)
-											}
+								for _, codJBPM := range datosEstidianteJBMP {
+									existe := false
+									for _, codigo := range codigosRes {
+										if codigo["IdProyectoCondor"] == codJBPM.Carrera && codigo["Codigo"] == codJBPM.Codigo {
+											existe = true
+											break
 										}
+									}
+									if !existe {
+										codigoAux := map[string]interface{}{
+											"IdProyectoCondor": codJBPM.Carrera,
+											"Codigo":           codJBPM.Codigo,
+										}
+										codigosRes = append(codigosRes, codigoAux)
 									}
 								}
 							}
 
-							errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",Activo:true&limit=0", &proyectoGet)
-							if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
-								if calendario["DependenciaId"] != nil {
-									for _, proyectoAux := range proyectoGet {
-										for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
-											if proyectoAux["Id"] == proyectoCalendario {
-												proyecto := map[string]interface{}{
-													"Id":          proyectoAux["Id"],
-													"Nombre":      proyectoAux["Nombre"],
-													"Codigo":      proyectoAux["Codigo"],
-													"CodigoSnies": proyectoAux["CodigoSnies"],
+							// errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",NivelFormacionId.NivelFormacionPadreId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",Activo:true&limit=0", &proyectoGet)
+
+							if calendario["DependenciaId"] != nil {
+								if len(codigosRes) > 0 {
+
+									errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=Activo:true&limit=0", &proyectoGet)
+
+									if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
+
+										// buscar proyectos con los que se tiene relación según el código de estudiante y ACEST
+										for _, codEst := range codigosRes {
+											errProyectos := request.GetJsonWSO2("http://"+beego.AppConfig.String("AcademicaEspacioAcademicoService")+"proyectos_snies/"+fmt.Sprint(codEst["IdProyectoCondor"]), &proyectoXML)
+
+											// si existe contenido en la respuesta hay al menos un proyecto valido
+											if errProyectos == nil && len(proyectoXML.Proyectos.Proyecto) > 0 {
+												// almacenar cada proyecto para comparar códigos SNIES
+												proyectosJBPM = append(proyectosJBPM, proyectoXML.Proyectos.Proyecto...)
+
+											} else if errProyectos != nil {
+												logs.Error("Error getting carrera ID %v. Error :%v", codEst["IdProyectoCondor"], errProyectos)
+											}
+											if len(proyectoXML.Proyectos.Proyecto) == 0 {
+												fmt.Printf("No projects retrieved with code: %v", codEst["IdProyectoCondor"])
+											}
+										}
+
+										// buscar por codigo SNIES de JBPM
+										for _, proyect := range proyectosJBPM {
+											for _, proyectoAux := range proyectoGet {
+												// si coincide, buscar por proyectos activos
+												if proyectoAux["CodigoSnies"] == proyect.ASCraCodSnies {
+													for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
+
+														if proyectoAux["Id"] == proyectoCalendario {
+															proyecto := map[string]interface{}{
+																"Id":          proyectoAux["Id"],
+																"Nombre":      proyectoAux["Nombre"],
+																"Codigo":      proyectoAux["Codigo"],
+																"CodigoSnies": proyectoAux["CodigoSnies"],
+															}
+
+															proyectos = append(proyectos, proyecto)
+														}
+													}
 												}
 
-												proyectos = append(proyectos, proyecto)
 											}
 										}
 									}
 								} else {
-									logs.Error(calendario)
-									APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran proyectos")
+									logs.Error(codigosRes)
+									APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran codigos del estudiante")
 									return APIResponseDTO
 								}
+							} else {
+								logs.Error(calendario)
+								APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran proyectos")
+								return APIResponseDTO
 							}
 
 							resultado["CodigoEstudiante"] = codigosRes
@@ -1452,7 +1509,7 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 						return APIResponseDTO
 					}
 
-					if codigosRes == nil {
+					if len(codigosRes) == 0 {
 						i := 0
 						for i < len(tipoRes) {
 							if tipoRes[i]["CodigoAbreviacion"] != "TRANSEXT" {
@@ -1465,6 +1522,8 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 						for i := 0; i < len(tipoRes); i++ {
 							if tipoRes[i]["CodigoAbreviacion"] == "TRANSEXT" {
 								tipoRes = append(tipoRes[:i], tipoRes[i+1:]...)
+							} else {
+								i++
 							}
 						}
 					}
@@ -1576,7 +1635,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 						"Recibo":            ReciboInscripcion,
 						"FechaGeneracion":   Inscripciones[i]["FechaCreacion"],
 						"EstadoRecibo":      Estado,
-						"EstadoInscripcion": Inscripciones[i]["EstadoInscripcionId"].(map[string]interface{})["Nombre"],
+						"EstadoInscripcion": Inscripciones[i]["EstadoInscripcionId"],
 						"NivelNombre":       nivelGet["Nombre"],
 						"Nivel":             nivelGet["Id"],
 						"SolicitudId":       nil,
