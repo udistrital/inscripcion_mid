@@ -79,7 +79,7 @@ func SetInactivo(url string) (exito bool) {
 // IdInfoCompTercero is ...
 func IdInfoCompTercero(grupo string, codAbrev string) (Id string, ok bool) {
 	var resp []map[string]interface{}
-	errResp := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria?query=GrupoInfoComplementariaId__Id:"+grupo+",CodigoAbreviacion:"+codAbrev+"&fields=Id", &resp)
+	errResp := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria?query=GrupoInfoComplementariaId__Id:"+grupo+",CodigoAbreviacion:"+codAbrev+"&fields=Id", &resp)
 	if errResp == nil && fmt.Sprintf("%v", resp) != "[map[]]" {
 		Id = fmt.Sprintf("%v", resp[0]["Id"].(float64))
 		ok = true
@@ -99,7 +99,7 @@ func VerificarRecibos(personaId string, periodoId string, TipoParametro string) 
 	var Estado string
 
 	//Se consultan todas las inscripciones relacionadas a ese tercero
-	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:true,PersonaId:"+personaId+",PeriodoId:"+periodoId, &Inscripciones)
+	errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:true,PersonaId:"+personaId+",PeriodoId:"+periodoId, &Inscripciones)
 	if errInscripcion == nil {
 		if Inscripciones != nil && fmt.Sprintf("%v", Inscripciones[0]) != "map[]" {
 			// Ciclo for que recorre todas las inscripciones del tercero
@@ -113,7 +113,7 @@ func VerificarRecibos(personaId string, periodoId string, TipoParametro string) 
 				} else {
 					ReciboInscripcion := fmt.Sprintf("%v", Inscripciones[i]["ReciboInscripcion"])
 					if ReciboInscripcion != "0/<nil>" {
-						errRecibo := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
+						errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
 						if errRecibo == nil {
 							if ReciboXML != nil && fmt.Sprintf("%v", ReciboXML) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", ReciboXML) != "map[]" {
 								//Fecha límite de pago extraordinario
@@ -257,7 +257,7 @@ func ObtenerTerceroInscripcion(inscripcion map[string]interface{}) (tercero *int
 
 func GetPeriodoPorId(periodoId float64) (periodo map[string]interface{}, err error) {
 	var requestPeriodo map[string]interface{}
-	errPeriodo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", periodoId), &requestPeriodo)
+	errPeriodo := request.GetJson(beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", periodoId), &requestPeriodo)
 	if errPeriodo != nil {
 		return nil, fmt.Errorf("error al realizar la solicitud del periodo: %v", errPeriodo)
 	}
