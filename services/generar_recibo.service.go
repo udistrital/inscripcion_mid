@@ -24,7 +24,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 	id := idStr
 
 	var idAspirante map[string]interface{}
-	err := request.GetJsonWSO2("http://"+beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion/tercero/"+id, &idAspirante)
+	err := request.GetJsonWSO2(beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion/tercero/"+id, &idAspirante)
 	if err == nil {
 		if idAspirante != nil && fmt.Sprintf("%v", idAspirante) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", idAspirante) != "map[]" {
 			idAspiranteMap, ok := idAspirante["Data"].(map[string]interface{})
@@ -38,7 +38,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 			}
 
 			var idRecibo map[string]interface{}
-			err := request.GetJsonWSO2("http://"+beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion-recibo/recibo/"+id, &idRecibo)
+			err := request.GetJsonWSO2(beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion-recibo/recibo/"+id, &idRecibo)
 			if err == nil {
 				if idRecibo != nil && fmt.Sprintf("%v", idRecibo) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", idRecibo) != "map[]" {
 
@@ -53,7 +53,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 					}
 
 					var data map[string]interface{}
-					err := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+idR, &data)
+					err := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+idR, &data)
 					if err == nil {
 						if data != nil && fmt.Sprintf("%v", data) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", data) != "map[]" {
 							APIResponseDTO = requestresponse.APIResponseDTO(true, 200, data, nil)
@@ -140,7 +140,7 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 		var ReciboXML map[string]interface{}
 		ReciboInscripcion := data["INSCRIPCION"].(map[string]interface{})["idRecibo"].(string)
 		if ReciboInscripcion != "0/<nil>" {
-			errRecibo := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
+			errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
 			fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 			fmt.Println("http://" + beego.AppConfig.String("ConsultarReciboJbpmService") + "consulta_recibo/")
 			if errRecibo == nil {

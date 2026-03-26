@@ -255,7 +255,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del estrato de la persona que costea
 	IdEstratoCostea, _ := helpers.IdInfoCompTercero("1654", "est-c")
 	var resultadoEstratoCostea []map[string]interface{}
-	errEstratoCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdEstratoCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoEstratoCostea)
+	errEstratoCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdEstratoCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoEstratoCostea)
 	if errEstratoCostea == nil && fmt.Sprintf("%v", resultadoEstratoCostea[0]["System"]) != "map[]" {
 		if resultadoEstratoCostea[0]["Status"] != 404 && resultadoEstratoCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -283,7 +283,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la ubicación residencia de quien costea
 	IdUbicacionResidenciaCostea, _ := helpers.IdInfoCompTercero("1654", "ubi-rc")
 	var resultadoUbicacionResidenciaCostea []map[string]interface{}
-	errUbicacionResidenciaCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdUbicacionResidenciaCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoUbicacionResidenciaCostea)
+	errUbicacionResidenciaCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdUbicacionResidenciaCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoUbicacionResidenciaCostea)
 	if errUbicacionResidenciaCostea == nil && fmt.Sprintf("%v", resultadoUbicacionResidenciaCostea[0]["System"]) != "map[]" {
 		if resultadoUbicacionResidenciaCostea[0]["Status"] != 404 && resultadoUbicacionResidenciaCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -311,7 +311,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de los ingresos del año anterior en salarios minimos de quien costea
 	IdIngresosSMCostea, _ := helpers.IdInfoCompTercero("1654", "ing-sm-ac")
 	var resultadoIngresosSMCostea []map[string]interface{}
-	errIngresosSMCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdIngresosSMCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoIngresosSMCostea)
+	errIngresosSMCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdIngresosSMCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoIngresosSMCostea)
 	if errIngresosSMCostea == nil && fmt.Sprintf("%v", resultadoIngresosSMCostea[0]["System"]) != "map[]" {
 		if resultadoIngresosSMCostea[0]["Status"] != 404 && resultadoIngresosSMCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -339,7 +339,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la localidad
 	IdLocalidad, _ := helpers.IdInfoCompTercero("9", "localidad")
 	var resultadoLocalidad []map[string]interface{}
-	errLocalidad := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdLocalidad+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoLocalidad)
+	errLocalidad := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdLocalidad+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoLocalidad)
 	if errLocalidad == nil && fmt.Sprintf("%v", resultadoLocalidad[0]["System"]) != "map[]" {
 		if resultadoLocalidad[0]["Status"] != 404 && resultadoLocalidad[0]["Id"] != nil {
 			// unmarshall dato
@@ -367,7 +367,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la pensión pagada en grado 11 en salarios minimos
 	IdPensionSM11, _ := helpers.IdInfoCompTercero("9", "pens-11-sm")
 	var resultadoPensionSM11 []map[string]interface{}
-	errPensionSM11 := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdPensionSM11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoPensionSM11)
+	errPensionSM11 := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdPensionSM11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoPensionSM11)
 	if errPensionSM11 == nil && fmt.Sprintf("%v", resultadoPensionSM11[0]["System"]) != "map[]" {
 		if resultadoPensionSM11[0]["Status"] != 404 && resultadoPensionSM11[0]["Id"] != nil {
 			// unmarshall dato
@@ -395,7 +395,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la dirección
 	IdDirResidencia, _ := helpers.IdInfoCompTercero("9", "dir-residencia")
 	var resultadoDirResidencia []map[string]interface{}
-	errDirResidencia := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdDirResidencia+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoDirResidencia)
+	errDirResidencia := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdDirResidencia+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoDirResidencia)
 	if errDirResidencia == nil && fmt.Sprintf("%v", resultadoDirResidencia[0]["System"]) != "map[]" {
 		if resultadoDirResidencia[0]["Status"] != 404 && resultadoDirResidencia[0]["Id"] != nil {
 			// unmarshall dato
@@ -423,7 +423,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del colegio donde se gradúo
 	IdColGraduado, _ := helpers.IdInfoCompTercero("9", "col-g")
 	var resultadoColGraduado []map[string]interface{}
-	errColGraduado := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdColGraduado+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoColGraduado)
+	errColGraduado := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdColGraduado+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoColGraduado)
 	if errColGraduado == nil && fmt.Sprintf("%v", resultadoColGraduado[0]["System"]) != "map[]" {
 		if resultadoColGraduado[0]["Status"] != 404 && resultadoColGraduado[0]["Id"] != nil {
 			// unmarshall dato
@@ -451,7 +451,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte del colegio donde se gradúo
 	IdSoporteCol, _ := helpers.IdInfoCompTercero("9", "sop-col-g")
 	var resultadoSoporteCol []map[string]interface{}
-	errSoporteCol := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteCol+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteCol)
+	errSoporteCol := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteCol+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteCol)
 	if errSoporteCol == nil && fmt.Sprintf("%v", resultadoSoporteCol[0]["System"]) != "map[]" {
 		if resultadoSoporteCol[0]["Status"] != 404 && resultadoSoporteCol[0]["Id"] != nil {
 			// unmarshall dato
@@ -479,7 +479,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la pensión mensual pagada en grado 11
 	IdPension11, _ := helpers.IdInfoCompTercero("9", "pens-11")
 	var resultadoPension11 []map[string]interface{}
-	errPension11 := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdPension11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoPension11)
+	errPension11 := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdPension11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoPension11)
 	if errPension11 == nil && fmt.Sprintf("%v", resultadoPension11[0]["System"]) != "map[]" {
 		if resultadoPension11[0]["Status"] != 404 && resultadoPension11[0]["Id"] != nil {
 			// unmarshall dato
@@ -507,7 +507,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte de pensión mensual pagada en grado 11
 	IdSoportePension11, _ := helpers.IdInfoCompTercero("9", "sop-pens-11")
 	var resultadoSoportePension11 []map[string]interface{}
-	errSoportePension11 := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoportePension11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoportePension11)
+	errSoportePension11 := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoportePension11+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoportePension11)
 	if errSoportePension11 == nil && fmt.Sprintf("%v", resultadoSoportePension11[0]["System"]) != "map[]" {
 		if resultadoSoportePension11[0]["Status"] != 404 && resultadoSoportePension11[0]["Id"] != nil {
 			// unmarshall dato
@@ -535,7 +535,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del nucleo familiar
 	IdNucleoFam, _ := helpers.IdInfoCompTercero("9", "nuc-f")
 	var resultadoNucleoFam []map[string]interface{}
-	errNucleoFam := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdNucleoFam+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoNucleoFam)
+	errNucleoFam := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdNucleoFam+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoNucleoFam)
 	if errNucleoFam == nil && fmt.Sprintf("%v", resultadoNucleoFam[0]["System"]) != "map[]" {
 		if resultadoNucleoFam[0]["Status"] != 404 && resultadoNucleoFam[0]["Id"] != nil {
 			// unmarshall dato
@@ -563,7 +563,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte de nucleo familiar
 	IdSoporteNucleoFam, _ := helpers.IdInfoCompTercero("9", "sop-nuc-f")
 	var resultadoSoporteNucleoFam []map[string]interface{}
-	errSoporteNucleoFam := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteNucleoFam+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteNucleoFam)
+	errSoporteNucleoFam := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteNucleoFam+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteNucleoFam)
 	if errSoporteNucleoFam == nil && fmt.Sprintf("%v", resultadoSoporteNucleoFam[0]["System"]) != "map[]" {
 		if resultadoSoporteNucleoFam[0]["Status"] != 404 && resultadoSoporteNucleoFam[0]["Id"] != nil {
 			// unmarshall dato
@@ -591,7 +591,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la situación laboral
 	IdSituacionLab, _ := helpers.IdInfoCompTercero("9", "sit-l")
 	var resultadoSituacionLab []map[string]interface{}
-	errSituacionLab := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSituacionLab+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSituacionLab)
+	errSituacionLab := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSituacionLab+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSituacionLab)
 	if errSituacionLab == nil && fmt.Sprintf("%v", resultadoSituacionLab[0]["System"]) != "map[]" {
 		if resultadoSituacionLab[0]["Status"] != 404 && resultadoSituacionLab[0]["Id"] != nil {
 			// unmarshall dato
@@ -619,7 +619,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte de la situación laboral
 	IdSoporteSituacionLab, _ := helpers.IdInfoCompTercero("9", "sop-sit-l")
 	var resultadoSoporteSituacionLab []map[string]interface{}
-	errSoporteSituacionLab := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteSituacionLab+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteSituacionLab)
+	errSoporteSituacionLab := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteSituacionLab+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteSituacionLab)
 	if errSoporteSituacionLab == nil && fmt.Sprintf("%v", resultadoSoporteSituacionLab[0]["System"]) != "map[]" {
 		if resultadoSoporteSituacionLab[0]["Status"] != 404 && resultadoSoporteSituacionLab[0]["Id"] != nil {
 			// unmarshall dato
@@ -643,7 +643,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de la dirección de residencia de la persona que costea
 	IdDireccionCostea, _ := helpers.IdInfoCompTercero("1654", "Dir-rc")
 	var resultadoDireccionCostea []map[string]interface{}
-	errDireccionCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdDireccionCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoDireccionCostea)
+	errDireccionCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdDireccionCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoDireccionCostea)
 	if errDireccionCostea == nil && fmt.Sprintf("%v", resultadoDireccionCostea[0]["System"]) != "map[]" {
 		if resultadoDireccionCostea[0]["Status"] != 404 && resultadoDireccionCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -671,7 +671,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte de estrato de residencia de la persona que costea
 	IdSoporteEstratoCostea, _ := helpers.IdInfoCompTercero("1654", "sop-est-c")
 	var resultadoSoporteEstratoCostea []map[string]interface{}
-	errSoporteEstratoCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteEstratoCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteEstratoCostea)
+	errSoporteEstratoCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteEstratoCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteEstratoCostea)
 	if errSoporteEstratoCostea == nil && fmt.Sprintf("%v", resultadoSoporteEstratoCostea[0]["System"]) != "map[]" {
 		if resultadoSoporteEstratoCostea[0]["Status"] != 404 && resultadoSoporteEstratoCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -699,7 +699,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación de los ingresos obtenidos el año anterior de la persona que costea
 	IdIngresosCostea, _ := helpers.IdInfoCompTercero("1654", "ing-ac")
 	var resultadoIngresosCostea []map[string]interface{}
-	errIngresosCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdIngresosCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoIngresosCostea)
+	errIngresosCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdIngresosCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoIngresosCostea)
 	if errIngresosCostea == nil && fmt.Sprintf("%v", resultadoIngresosCostea[0]["System"]) != "map[]" {
 		if resultadoIngresosCostea[0]["Status"] != 404 && resultadoIngresosCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -727,7 +727,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte de los ingresos obtenidos el año anterior de la persona que costea
 	IdSoporteIngresosCostea, _ := helpers.IdInfoCompTercero("1654", "sop-ing-ac")
 	var resultadoSoporteIngresosCostea []map[string]interface{}
-	errSoporteIngresosCostea := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteIngresosCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteIngresosCostea)
+	errSoporteIngresosCostea := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteIngresosCostea+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteIngresosCostea)
 	if errSoporteIngresosCostea == nil && fmt.Sprintf("%v", resultadoSoporteIngresosCostea[0]["System"]) != "map[]" {
 		if resultadoSoporteIngresosCostea[0]["Status"] != 404 && resultadoSoporteIngresosCostea[0]["Id"] != nil {
 			// unmarshall dato
@@ -755,7 +755,7 @@ func GetInfoLegalizacionTercero(idTercero string) (APIResponseDTO requestrespons
 	// Recuperación del soporte general
 	IdSoporteGeneral, _ := helpers.IdInfoCompTercero("9", "sop-gral")
 	var resultadoSoporteGeneral []map[string]interface{}
-	errSoporteGeneral := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteGeneral+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteGeneral)
+	errSoporteGeneral := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdSoporteGeneral+",TerceroId:"+idTercero+"&sortby=Id&order=desc&limit=1", &resultadoSoporteGeneral)
 	if errSoporteGeneral == nil && fmt.Sprintf("%v", resultadoSoporteGeneral[0]["System"]) != "map[]" {
 		if resultadoSoporteGeneral[0]["Status"] != 404 && resultadoSoporteGeneral[0]["Id"] != nil {
 			// unmarshall dato
@@ -848,7 +848,7 @@ func ActualizarInfolegalizacionMatricula(data []byte) (APIResponseDTO requestres
 
 func ObtenerInfoComplementariaActual(idTercero float64, IdInfoComp string, legalizacionMatriculaRequest map[string]interface{}, stringInfoComp string) (map[string]interface{}, error) {
 	var resultadoInfoComp []map[string]interface{}
-	errInfoComp := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdInfoComp+",TerceroId:"+fmt.Sprintf("%.f", idTercero)+"&sortby=Id&order=desc&limit=1", &resultadoInfoComp)
+	errInfoComp := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:"+IdInfoComp+",TerceroId:"+fmt.Sprintf("%.f", idTercero)+"&sortby=Id&order=desc&limit=1", &resultadoInfoComp)
 	if errInfoComp == nil && fmt.Sprintf("%v", resultadoInfoComp[0]["System"]) != "map[]" {
 		if resultadoInfoComp[0]["Status"] != 404 && resultadoInfoComp[0]["Id"] != nil {
 			id := resultadoInfoComp[0]["Id"].(float64)
@@ -894,7 +894,7 @@ func ObtenerInfoComplementariaActual(idTercero float64, IdInfoComp string, legal
 
 func ActualizarInfoComplementaria(infoComp map[string]interface{}, id float64) (map[string]interface{}, error) {
 	var resp map[string]interface{}
-	errPutInfoComp := request.SendJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/"+fmt.Sprintf("%.f", id), "PUT", &resp, infoComp)
+	errPutInfoComp := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/"+fmt.Sprintf("%.f", id), "PUT", &resp, infoComp)
 	if errPutInfoComp == nil && resp["Status"] != "404" && resp["Status"] != "400" {
 		return resp, nil
 	} else {

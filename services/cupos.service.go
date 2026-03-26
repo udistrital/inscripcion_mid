@@ -22,7 +22,7 @@ func GetAllCuposInscripcion(periodo string, proyecto string, tipo string) (APIRe
 	wge := new(errgroup.Group)
 	var mutex sync.Mutex // Mutex para proteger el acceso a resultados
 
-	errCupos := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"cupo_inscripcion?query=Activo:true,PeriodoId:"+periodo+",ProyectoAcademicoId:"+proyecto+",TipoInscripcionId.Id:"+tipo+",Activo:true&limit=0", &cupo)
+	errCupos := request.GetJson(beego.AppConfig.String("InscripcionService")+"cupo_inscripcion?query=Activo:true,PeriodoId:"+periodo+",ProyectoAcademicoId:"+proyecto+",TipoInscripcionId.Id:"+tipo+",Activo:true&limit=0", &cupo)
 
 	if errCupos != nil {
 		return requestresponse.APIResponseDTO(false, 400, nil, "Error en la consulta de cupos")
@@ -54,7 +54,7 @@ func GetAllCuposInscripcion(periodo string, proyecto string, tipo string) (APIRe
 			idcupo := c["CupoId"].(float64)
 
 			var tipocupo map[string]interface{}
-			errtipocupo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"/parametro?query=TipoParametroId__Id:87,Id:"+fmt.Sprintf("%v", idcupo)+"&limit=0", &tipocupo)
+			errtipocupo := request.GetJson(beego.AppConfig.String("ParametroService")+"/parametro?query=TipoParametroId__Id:87,Id:"+fmt.Sprintf("%v", idcupo)+"&limit=0", &tipocupo)
 			if errtipocupo == nil && tipocupo["Status"] == "200" && fmt.Sprintf("%v", tipocupo["Data"]) != "[map[]]" {
 				cupoContenido["Nombre"] = tipocupo["Data"].([]interface{})[0].(map[string]interface{})["Nombre"]
 				cupoContenido["Descripcion"] = tipocupo["Data"].([]interface{})[0].(map[string]interface{})["Descripcion"]
@@ -99,7 +99,7 @@ func UpdateCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIResp
 			"TipoInscripcionId":   cupoActualizado["TipoInscripcionId"],
 		}
 		cupoActualizado = dataActualizada
-		errActualizarCupo := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/"+fmt.Sprintf("%.f", idcupo), "PUT", &cupoActualizado, dataActualizada)
+		errActualizarCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/"+fmt.Sprintf("%.f", idcupo), "PUT", &cupoActualizado, dataActualizada)
 		if errActualizarCupo == nil {
 			return requestresponse.APIResponseDTO(false, 200, cupoActualizado, dataActualizada)
 		} else {
@@ -115,7 +115,7 @@ func GetAllDocCupos() (APIResponseDTO requestresponse.APIResponse) {
 	var docCupo []map[string]interface{}
 
 	var listado []map[string]interface{}
-	errCupos := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+fmt.Sprintf("/documento_cupo?query=Activo:true&limit=0"), &docCupo)
+	errCupos := request.GetJson(beego.AppConfig.String("InscripcionService")+fmt.Sprintf("/documento_cupo?query=Activo:true&limit=0"), &docCupo)
 	if errCupos == nil {
 
 		for _, c := range docCupo {
@@ -132,7 +132,7 @@ func GetAllDocCupos() (APIResponseDTO requestresponse.APIResponse) {
 			cupoContenido["CupoInscripcionId"] = idCupo
 
 			var tipocupo map[string]interface{}
-			errtipocupo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"/parametro?query=TipoParametroId__Id:87,Id:"+fmt.Sprintf("%v", idTipoCupo)+"&limit=0", &tipocupo)
+			errtipocupo := request.GetJson(beego.AppConfig.String("ParametroService")+"/parametro?query=TipoParametroId__Id:87,Id:"+fmt.Sprintf("%v", idTipoCupo)+"&limit=0", &tipocupo)
 			//fmt.Println(ProyectoV2["Data"])
 			if errtipocupo == nil && tipocupo["Status"] == "200" && fmt.Sprintf("%v", tipocupo["Data"]) != "[map[]]" {
 				cupoContenido["Cupo"] = tipocupo["Data"].([]interface{})[0].(map[string]interface{})["Nombre"]
@@ -161,7 +161,7 @@ func PostDocCupos(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	if err := json.Unmarshal(data, &nuevoComentario); err == nil {
 		idCupoIns := nuevoComentario["IdCupoIns"]
 
-		errCupos := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+fmt.Sprintf("/cupo_inscripcion/")+fmt.Sprintf("%.f", idCupoIns), &cupo)
+		errCupos := request.GetJson(beego.AppConfig.String("InscripcionService")+fmt.Sprintf("/cupo_inscripcion/")+fmt.Sprintf("%.f", idCupoIns), &cupo)
 		if errCupos == nil {
 
 			dataComentario := map[string]interface{}{
@@ -175,13 +175,13 @@ func PostDocCupos(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 			}
 
 			nuevoComentario = dataComentario
-			errNoticia := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"/documento_cupo/", "POST", &nuevoComentario, dataComentario)
+			errNoticia := request.SendJson(beego.AppConfig.String("InscripcionService")+"/documento_cupo/", "POST", &nuevoComentario, dataComentario)
 			if errNoticia == nil {
 
 				APIResponseDTO = requestresponse.APIResponseDTO(true, 200, nuevoComentario)
 				return APIResponseDTO
 			} else {
-				models.SetInactivo(fmt.Sprintf("http://"+beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/%.f", nuevoComentario["Data"].(map[string]interface{})["Id"].(float64)))
+				models.SetInactivo(fmt.Sprintf(beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/%.f", nuevoComentario["Data"].(map[string]interface{})["Id"].(float64)))
 			}
 
 			APIResponseDTO = requestresponse.APIResponseDTO(true, 500, respuesta, nuevoComentario)
@@ -223,7 +223,7 @@ func PostCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIRespon
 					},
 				}
 
-				errActualizarCupo := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"cupo_inscripcion/"+fmt.Sprintf("%.f", idCupo), "PUT", &cupoActualizado, respuesta)
+				errActualizarCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"cupo_inscripcion/"+fmt.Sprintf("%.f", idCupo), "PUT", &cupoActualizado, respuesta)
 
 				if errActualizarCupo != nil {
 					errores = append(errores, errActualizarCupo.Error())
@@ -248,7 +248,7 @@ func PostCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIRespon
 								"Id": registroMap["TipoInscripcionId"],
 							},
 						}
-						errActualizarCupo := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/"+fmt.Sprintf("%.f", idCupo), "PUT", &respuesta, cupoActualizado)
+						errActualizarCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/"+fmt.Sprintf("%.f", idCupo), "PUT", &respuesta, cupoActualizado)
 
 						if errActualizarCupo != nil {
 							errores = append(errores, errActualizarCupo.Error())
@@ -272,7 +272,7 @@ func PostCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIRespon
 							},
 						}
 
-						errActualizarCupo := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/", "POST", &respuesta, cupoNuevo)
+						errActualizarCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"/cupo_inscripcion/", "POST", &respuesta, cupoNuevo)
 						if errActualizarCupo != nil {
 							errores = append(errores, errActualizarCupo.Error())
 						} else {
@@ -288,7 +288,7 @@ func PostCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIRespon
 									"Id": respuesta["Id"],
 								},
 							}
-							errDocumentoCupo := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"/documento_cupo/", "POST", &respuesta, dataComentario)
+							errDocumentoCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"/documento_cupo/", "POST", &respuesta, dataComentario)
 							fmt.Println(respuesta)
 							if errDocumentoCupo != nil {
 								errores = append(errores, errDocumentoCupo.Error())
