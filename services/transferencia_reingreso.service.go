@@ -966,7 +966,6 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 	var codigoProyectoStr string
 	var proyectoXML map[string]interface{}
 
-
 	// Incripción
 	errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"/inscripcion?query=Id:"+fmt.Sprintf("%v", idInscripcion), &inscripcionGet)
 	if errInscripcion == nil && fmt.Sprintf("%v", inscripcionGet[0]) != "map[]" {
