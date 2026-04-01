@@ -118,7 +118,7 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 			}
 
 		case "Reingreso":
-			// fmt.Println("///////  Entro a reingresos    ---------")
+
 			reingreso = map[string]interface{}{
 				"InscripcionId":    inscripcionId,
 				"CodigoEstudiante": SolicitudInscripcion["CodigoEstudiante"],
@@ -156,14 +156,14 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 				if inscripcionRealizada != nil {
 					if idInscripcion, ok := inscripcionRealizada["InscripcionId"]; ok {
 						var inscripcion map[string]interface{}
-						errGetInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &inscripcion)
+						errGetInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &inscripcion)
 						if errGetInscripcion == nil && inscripcion != nil {
 							var estadoInscripcion []map[string]interface{}
-							errGetEstado := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:INSCREAL", &estadoInscripcion)
+							errGetEstado := request.GetJson(beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:INSCREAL", &estadoInscripcion)
 							if errGetEstado == nil && len(estadoInscripcion) > 0 {
 								inscripcion["EstadoInscripcionId"] = estadoInscripcion[0]
 								var inscripcionPut map[string]interface{}
-								request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &inscripcionPut, inscripcion)
+								request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &inscripcionPut, inscripcion)
 							}
 						}
 					}
@@ -1179,11 +1179,9 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 								var solicitudJson map[string]interface{}
 								if err := json.Unmarshal([]byte(referencia), &solicitudJson); err == nil {
 
-									fmt.Println(solicitudJson["InscripcionId"], idInscripcion)
 									if fmt.Sprintf("%v", solicitudJson["InscripcionId"]) == fmt.Sprintf("%v", idInscripcion) {
 										var inscripcion map[string]interface{}
 										resultado["SolicitudId"] = fmt.Sprintf("%v", solicitud["SolicitudId"].(map[string]interface{})["Id"])
-										fmt.Println(solicitudJson["InscripcionId"], idInscripcion)
 
 										// Validación de reingresos y transferencias
 										if fmt.Sprintf("%t", solicitudJson["EsReingreso"]) == "true" {

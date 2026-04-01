@@ -16,15 +16,12 @@ func PostAlertSolicitud(idTercero string, idTipoProduccionSrt string, data []byt
 	//resultado experiencia
 	resultado := make(map[string]interface{})
 	var SolicitudProduccion map[string]interface{}
-	fmt.Println("Post Alert Solicitud")
-	fmt.Println("Id Tercero: ", idTercero)
-	fmt.Println("Id Tercero: ", idTipoProduccionSrt)
 
 	if err := json.Unmarshal(data, &SolicitudProduccion); err == nil {
 		if SolicitudProduccionAlert, errAlert := helpers.CheckCriteriaData(SolicitudProduccion, idTipoProduccion, idTercero); errAlert == nil {
 			if SolicitudProduccionPut, errCoincidence := helpers.CheckCoincidenceProduction(SolicitudProduccionAlert, idTipoProduccion, idTercero); errCoincidence == nil {
 				idStr := fmt.Sprintf("%v", SolicitudProduccionPut["Id"])
-				fmt.Println(idStr)
+
 				if resultadoPutSolicitudDocente, errPut := helpers.PutSolicitudDocente(SolicitudProduccionPut, idStr); errPut == nil {
 					resultado = resultadoPutSolicitudDocente
 					APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)

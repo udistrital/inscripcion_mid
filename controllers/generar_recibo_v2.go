@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"fmt"
-
 	"github.com/astaxie/beego"
 	"github.com/udistrital/inscripcion_mid/services"
 	"github.com/udistrital/utils_oas/errorhandler"
@@ -26,7 +24,7 @@ func (c *GenerarReciboV2Controller) URLMapping() {
 // @Failure 403 body is empty
 // @router / [post]
 func (c *GenerarReciboV2Controller) Post() {
-	fmt.Println("Post recibo v2")
+
 	defer errorhandler.HandlePanic(&c.Controller)
 
 	data := c.Ctx.Input.RequestBody
