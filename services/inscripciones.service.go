@@ -594,7 +594,7 @@ func InfoComplementariaTercero(data []byte) (APIResponseDTO requestresponse.APIR
 		APIResponseDTO = requestresponse.APIResponseDTO(true, 200, respuestas, nil)
 	} else {
 		for _, disable := range inactivePosts {
-			helpers.SetInactivo("http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
+			helpers.SetInactivo(beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
 		}
 	}
 	return APIResponseDTO
@@ -881,7 +881,7 @@ func ActualizarInfoContact(data []byte) (APIResponseDTO requestresponse.APIRespo
 			request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/"+fmt.Sprintf("%.f", revert["Id"].(float64)), "PUT", &resp, revert)
 		}
 		for _, disable := range inactivePosts {
-			helpers.SetInactivo("http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
+			helpers.SetInactivo(beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
 		}
 		return APIResponseDTO
 	}
@@ -1056,7 +1056,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 
 								SolicitudRecibo["proyecto"] = SolicitudInscripcion["ProgramaAcademicoCodigo"]
 
-								reciboSolicitud := httplib.Post("http://" + beego.AppConfig.String("GenerarReciboJbpmService") + "recibos_pago_proxy")
+								reciboSolicitud := httplib.Post(beego.AppConfig.String("GenerarReciboJbpmService") + "recibos_pago_proxy")
 								reciboSolicitud.Header("Accept", "application/json")
 								reciboSolicitud.Header("Content-Type", "application/json")
 								reciboSolicitud.JSONBody(SolicitudRecibo)
@@ -1064,7 +1064,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 								// fmt.Println("Solicitud_recibo: ")
 								// fmt.Println(SolicitudRecibo)
 								// errRecibo2 := request.SendJson(beego.AppConfig.String("GenerarReciboJbpmService")+"recibosPagoProxy", "POST", &NuevoRecibo, SolicitudRecibo)
-								// fmt.Println("http://" + beego.AppConfig.String("GenerarReciboJbpmService") + "recibosPagoProxy")
+								// fmt.Println(beego.AppConfig.String("GenerarReciboJbpmService") + "recibosPagoProxy")
 
 								if errRecibo := reciboSolicitud.ToJSON(&NuevoRecibo); errRecibo == nil {
 									// fmt.Println("Respuesta de JBPM")

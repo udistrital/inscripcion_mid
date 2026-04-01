@@ -303,7 +303,7 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 	var mutex sync.Mutex // Mutex para proteger el acceso a resultados
 	var DataMap []map[string]interface{}
 
-	endpoint := "http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero?query=TerceroId__Id:" + fmt.Sprintf("%v", idTercero) + ",InfoComplementariaId__CodigoAbreviacion:EXP_LABORAL,Activo:true&limit=0&sortby=Id&order=asc"
+	endpoint := beego.AppConfig.String("TercerosService") + "info_complementaria_tercero?query=TerceroId__Id:" + fmt.Sprintf("%v", idTercero) + ",InfoComplementariaId__CodigoAbreviacion:EXP_LABORAL,Activo:true&limit=0&sortby=Id&order=asc"
 	fmt.Println(endpoint)
 	errData := request.GetJson(endpoint, &DataMap)
 	if errData != nil {

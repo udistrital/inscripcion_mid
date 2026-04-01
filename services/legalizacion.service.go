@@ -237,7 +237,7 @@ func createInfoSocioEcomonomicaCostea(infoSocioeconomicaBody map[string]interfac
 
 func createInfoComplementaria(infoCompBody map[string]interface{}) (map[string]interface{}, error) {
 	var newInfoComp map[string]interface{}
-	urlInfoComp := "http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero"
+	urlInfoComp := beego.AppConfig.String("TercerosService") + "info_complementaria_tercero"
 
 	if errNewPlan := request.SendJson(urlInfoComp, "POST", &newInfoComp, infoCompBody); errNewPlan == nil {
 		return newInfoComp, nil

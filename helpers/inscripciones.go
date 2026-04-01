@@ -189,7 +189,7 @@ func GenerarCredencialInscripcionPregrado(periodoId float64) (credencial int, er
 	periodoIdInt := int(periodoId)
 
 	// Construir la URL para la solicitud
-	url := fmt.Sprintf("http://%s/inscripcion?limit=1&query=PeriodoId:%d&fields=Credencial&sortby=Credencial&order=desc",
+	url := fmt.Sprintf("%s/inscripcion?limit=1&query=PeriodoId:%d&fields=Credencial&sortby=Credencial&order=desc",
 		beego.AppConfig.String("InscripcionService"), periodoIdInt)
 
 	// Realizar la solicitud GET
@@ -321,7 +321,7 @@ func BuscarParametroperiodo(TipoParametro string, anio int, target *map[string]i
 		}
 
 		urlEndpoint := "parametro_periodo?query=Activo:true,ParametroId.TipoParametroId.Id:2,ParametroId.CodigoAbreviacion:"
-		urlParametro := fmt.Sprintf("http://%s%s%s,PeriodoId.Year:%d,PeriodoId.CodigoAbreviacion:VG",
+		urlParametro := fmt.Sprintf("%s%s%s,PeriodoId.Year:%d,PeriodoId.CodigoAbreviacion:VG",
 			beego.AppConfig.String("ParametroService"), urlEndpoint, TipoParametro, anioConsulta)
 
 		err := request.GetJson(urlParametro, target)
