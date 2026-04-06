@@ -1,11 +1,9 @@
 package controllers
 
 import (
-
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/services"
+	"github.com/udistrital/inscripcion_mid/services"
 	"github.com/udistrital/utils_oas/errorhandler"
-
 )
 
 // GeneradorCodigoBarrasController ...
@@ -28,7 +26,7 @@ func (c *GeneradorCodigoBarrasController) URLMapping() {
 func (c *GeneradorCodigoBarrasController) GenerarCodigoBarras() {
 
 	defer errorhandler.HandlePanic(&c.Controller)
-	
+
 	data := c.Ctx.Input.RequestBody
 
 	respuesta := services.GenerarCodigoBarras(data)

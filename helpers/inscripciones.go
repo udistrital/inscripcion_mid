@@ -4,7 +4,8 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/utils"
+	"github.com/udistrital/inscripcion_mid/models"
+	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -79,7 +80,7 @@ func SetInactivo(url string) (exito bool) {
 // IdInfoCompTercero is ...
 func IdInfoCompTercero(grupo string, codAbrev string) (Id string, ok bool) {
 	var resp []map[string]interface{}
-	errResp := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria?query=GrupoInfoComplementariaId__Id:"+grupo+",CodigoAbreviacion:"+codAbrev+"&fields=Id", &resp)
+	errResp := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria?query=GrupoInfoComplementariaId__Id:"+grupo+",CodigoAbreviacion:"+codAbrev+"&fields=Id", &resp)
 	if errResp == nil && fmt.Sprintf("%v", resp) != "[map[]]" {
 		Id = fmt.Sprintf("%v", resp[0]["Id"].(float64))
 		ok = true
@@ -91,33 +92,35 @@ func IdInfoCompTercero(grupo string, codAbrev string) (Id string, ok bool) {
 }
 
 // Verificar estado de lso recibos ...
-func VerificarRecibos(personaId string, periodoId string) (resultadoAuxResponse map[string]interface{}, Error string) {
+func VerificarRecibos(personaId string, periodoId string, TipoParametro string) (resultadoAuxResponse map[string]interface{}, Error string) {
 	var Inscripciones []map[string]interface{}
-	var ReciboXML map[string]interface{}
+	var ReciboResp models.ReciboResponse
 	var resultadoAux []map[string]interface{}
 	var resultado = make(map[string]interface{})
 	var Estado string
 
 	//Se consultan todas las inscripciones relacionadas a ese tercero
-	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:true,PersonaId:"+personaId+",PeriodoId:"+periodoId, &Inscripciones)
+	errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:true,PersonaId:"+personaId+",PeriodoId:"+periodoId, &Inscripciones)
 	if errInscripcion == nil {
 		if Inscripciones != nil && fmt.Sprintf("%v", Inscripciones[0]) != "map[]" {
 			// Ciclo for que recorre todas las inscripciones del tercero
 			resultadoAux = make([]map[string]interface{}, len(Inscripciones))
 			for i := 0; i < len(Inscripciones); i++ {
-				if Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Transferencia interna" || Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Transferencia externa" || Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"] == "Reingreso" {
+				tipo := Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["Nombre"]
+
+				if (TipoParametro == "12" && (tipo == "Transferencia interna" || tipo == "Transferencia externa" || tipo == "Reingreso")) || (TipoParametro == "14" && tipo != "Reingreso") {
 					Inscripciones = append(Inscripciones[:i], Inscripciones[i+1:]...)
 					i = i - 1
 				} else {
 					ReciboInscripcion := fmt.Sprintf("%v", Inscripciones[i]["ReciboInscripcion"])
 					if ReciboInscripcion != "0/<nil>" {
-						errRecibo := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
+						errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboResp)
 						if errRecibo == nil {
-							if ReciboXML != nil && fmt.Sprintf("%v", ReciboXML) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", ReciboXML) != "map[]" {
+							if len(ReciboResp.ReciboCollection.Recibo) > 0 {
 								//Fecha límite de pago extraordinario
-								FechaLimite := ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["fecha_extraordinario"].(string)
-								EstadoRecibo := ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["estado"].(string)
-								PagoRecibo := ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["pago"].(string)
+								FechaLimite := ReciboResp.ReciboCollection.Recibo[0].FechaExtraordinario
+								EstadoRecibo := ReciboResp.ReciboCollection.Recibo[0].Estado
+								PagoRecibo := ReciboResp.ReciboCollection.Recibo[0].Pago
 								//Verificación si el recibo de pago se encuentra activo y pago
 								if EstadoRecibo == "A" && PagoRecibo == "S" {
 									Estado = "Pago"
@@ -187,7 +190,7 @@ func GenerarCredencialInscripcionPregrado(periodoId float64) (credencial int, er
 	periodoIdInt := int(periodoId)
 
 	// Construir la URL para la solicitud
-	url := fmt.Sprintf("http://%s/inscripcion?limit=1&query=PeriodoId:%d&fields=Credencial&sortby=Credencial&order=desc",
+	url := fmt.Sprintf("%s/inscripcion?limit=1&query=PeriodoId:%d&fields=Credencial&sortby=Credencial&order=desc",
 		beego.AppConfig.String("InscripcionService"), periodoIdInt)
 
 	// Realizar la solicitud GET
@@ -255,7 +258,7 @@ func ObtenerTerceroInscripcion(inscripcion map[string]interface{}) (tercero *int
 
 func GetPeriodoPorId(periodoId float64) (periodo map[string]interface{}, err error) {
 	var requestPeriodo map[string]interface{}
-	errPeriodo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", periodoId), &requestPeriodo)
+	errPeriodo := request.GetJson(beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", periodoId), &requestPeriodo)
 	if errPeriodo != nil {
 		return nil, fmt.Errorf("error al realizar la solicitud del periodo: %v", errPeriodo)
 	}
@@ -299,9 +302,38 @@ func ValidarPeriodo(periodoId float64, año float64, ciclo float64) error {
 	return nil
 }
 
+// Verificar en donde se usa y cambiarla por la siguiente
 func CalcularAñoParaLaConsultaDeDerechosPecuniarios(año float64, ciclo float64) int {
 	if ciclo == 1 {
 		return int(año) - 1
 	}
 	return int(año)
+}
+
+func BuscarParametroperiodo(TipoParametro string, anio int, target *map[string]interface{}) error {
+
+	anioInt := anio
+	for intento := 0; intento <= 2; intento++ {
+		anioConsulta := anioInt - intento
+
+		// limita consulta de parametros a un año arbitrario
+		if anioConsulta < 2024 {
+			break
+		}
+
+		urlEndpoint := "parametro_periodo?query=Activo:true,ParametroId.TipoParametroId.Id:2,ParametroId.CodigoAbreviacion:"
+		urlParametro := fmt.Sprintf("%s%s%s,PeriodoId.Year:%d,PeriodoId.CodigoAbreviacion:VG",
+			beego.AppConfig.String("ParametroService"), urlEndpoint, TipoParametro, anioConsulta)
+
+		err := request.GetJson(urlParametro, target)
+		if err != nil {
+			beego.Error(fmt.Sprintf("Error consultando parámetro para año %d: %v", anioConsulta, err))
+			continue
+		}
+
+		if data, ok := (*target)["Data"].([]interface{}); ok && len(data) > 0 {
+			return nil
+		}
+	}
+	return fmt.Errorf("no se encontró parámetro válido hasta 2 años hacia atrás desde %d", anioInt)
 }

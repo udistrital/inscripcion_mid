@@ -2,15 +2,16 @@ package utils
 
 import (
 	"fmt"
-	"github.com/astaxie/beego"
 	"time"
+
+	"github.com/astaxie/beego"
 
 	"github.com/udistrital/utils_oas/request"
 )
 
 func SendTemplatedEmail(inputemailtemplated map[string]interface{}) (result error) {
 	var resultadoPost map[string]interface{}
-	if errSendTemplatedEmail := request.SendJsonEscapeUnicode("http://"+beego.AppConfig.String("notificacionService")+"email/enviar_templated_email", "POST", &resultadoPost, inputemailtemplated); errSendTemplatedEmail == nil {
+	if errSendTemplatedEmail := request.SendJsonEscapeUnicode(beego.AppConfig.String("notificacionService")+"email/enviar_templated_email", "POST", &resultadoPost, inputemailtemplated); errSendTemplatedEmail == nil {
 		fmt.Println("resultado", resultadoPost)
 		return nil
 	} else {

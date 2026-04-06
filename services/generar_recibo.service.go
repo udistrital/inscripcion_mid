@@ -14,7 +14,7 @@ import (
 	"github.com/astaxie/beego/logs"
 	"github.com/phpdave11/gofpdf"
 	"github.com/phpdave11/gofpdf/contrib/barcode"
-	"github.com/udistrital/sga_inscripcion_mid/utils"
+	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 )
@@ -24,7 +24,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 	id := idStr
 
 	var idAspirante map[string]interface{}
-	err := request.GetJsonWSO2("http://"+beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion/tercero/"+id, &idAspirante)
+	err := request.GetJsonWSO2(beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion/tercero/"+id, &idAspirante)
 	if err == nil {
 		if idAspirante != nil && fmt.Sprintf("%v", idAspirante) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", idAspirante) != "map[]" {
 			idAspiranteMap, ok := idAspirante["Data"].(map[string]interface{})
@@ -38,7 +38,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 			}
 
 			var idRecibo map[string]interface{}
-			err := request.GetJsonWSO2("http://"+beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion-recibo/recibo/"+id, &idRecibo)
+			err := request.GetJsonWSO2(beego.AppConfig.String("liquidacionMatriculasService")+"liquidacion-recibo/recibo/"+id, &idRecibo)
 			if err == nil {
 				if idRecibo != nil && fmt.Sprintf("%v", idRecibo) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", idRecibo) != "map[]" {
 
@@ -53,7 +53,7 @@ func ValidarReciboGet(idStr string) (APIResponseDTO requestresponse.APIResponse)
 					}
 
 					var data map[string]interface{}
-					err := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+idR, &data)
+					err := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+idR, &data)
 					if err == nil {
 						if data != nil && fmt.Sprintf("%v", data) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", data) != "map[]" {
 							APIResponseDTO = requestresponse.APIResponseDTO(true, 200, data, nil)
@@ -140,9 +140,7 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 		var ReciboXML map[string]interface{}
 		ReciboInscripcion := data["INSCRIPCION"].(map[string]interface{})["idRecibo"].(string)
 		if ReciboInscripcion != "0/<nil>" {
-			errRecibo := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
-			fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-			fmt.Println("http://" + beego.AppConfig.String("ConsultarReciboJbpmService") + "consulta_recibo/")
+			errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
 			if errRecibo == nil {
 				if ReciboXML != nil && fmt.Sprintf("%v", ReciboXML) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", ReciboXML) != "map[]" {
 					data["PAGO"].(map[string]interface{})["valor"] = ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["valor_extraordinario"].(string)
@@ -540,11 +538,16 @@ func docsCarpeta(pdf *gofpdf.Fpdf, data map[string]interface{}, tagSuite string,
 func GenerarReciboAspirante(datos map[string]interface{}) *gofpdf.Fpdf {
 
 	// aqui el numero consecutivo de comprobante
+	documento := datos["DocumentoDelAspirante"].(string)
+	for len(documento) < 12 {
+		documento = "0" + documento
+	}
 	numComprobante := datos["Comprobante"].(string)
-
 	for len(numComprobante) < 6 {
 		numComprobante = "0" + numComprobante
 	}
+
+	numComprobante = documento + numComprobante
 
 	datos["ProyectoAspirante"] = strings.ToUpper(datos["ProyectoAspirante"].(string))
 	datos["Descripcion"] = strings.ToUpper(datos["Descripcion"].(string))
@@ -617,39 +620,46 @@ func header(pdf *gofpdf.Fpdf, comprobante string, banco bool) *gofpdf.Fpdf {
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	path := beego.AppConfig.String("StaticPath")
-	pdf = image(pdf, path+"/img/UDEscudo2.png", 7, pdf.GetY(), 0, 17.5)
+	initialY := pdf.GetY()
 
-	if banco {
-		pdf = image(pdf, path+"/img/banco.PNG", 198, pdf.GetY(), 0, 12.5)
-	}
+	pdf = image(pdf, path+"/img/UDEscudo2.png", 7, initialY, 0, 17.5)
 
-	pdf.SetXY(7, pdf.GetY())
+	pdf.SetXY(20, initialY)
 	fontStyle(pdf, "B", 10, 0)
-	pdf.Cell(13, 10, "")
 	pdf.Cell(140, 10, "UNIVERSIDAD DISTRITAL")
-	if banco {
-		fontStyle(pdf, "B", 8, 0)
-		pdf.Cell(50, 10, "PAGUE UNICAMENTE EN")
-		fontStyle(pdf, "B", 10, 0)
-	}
-	pdf.Ln(4)
-	pdf.Cell(13, 10, "")
+
+	pdf.SetXY(20, initialY+4)
+	fontStyle(pdf, "B", 10, 0)
 	pdf.Cell(60, 10, tr("Francisco José de Caldas"))
-	pdf.Cell(80, 10, "COMPROBANTE DE PAGO No "+comprobante)
+	pdf.Cell(80, 10, "COMPROBANTE DE PAGO No")
+
+	pdf.SetXY(20, initialY+8)
+	fontStyle(pdf, "", 8, 0)
+	pdf.Cell(50, 10, "NIT 899.999.230-7")
+
+	pdf.SetXY(88, initialY+8)
+	fontStyle(pdf, "B", 10, 0)
+	pdf.Cell(80, 10, comprobante)
 
 	if banco {
-		fontStyle(pdf, "B", 8, 0)
-		pdf.Cell(50, 10, "BANCO DE OCCIDENTE")
-	} /* else {
-		fontStyle(pdf, "", 8, 70)
-		pdf.Cell(50, 10, "espacio para serial")
-	} */
+		// Subir la sección derecha completa (ajustando initialY para esta sección)
+		rightSectionY := initialY - 6 // Subir 6mm toda la sección derecha
 
-	pdf.Ln(4)
-	fontStyle(pdf, "", 8, 0)
-	pdf.Cell(13, 10, "")
-	pdf.Cell(50, 10, "NIT 899.999.230-7")
-	pdf.Ln(10)
+		// Agregar título de corresponsales
+		pdf.SetXY(142, rightSectionY)
+		fontStyle(pdf, "B", 6, 0)
+		pdf.Cell(90, 10, "BANCO DE OCCIDENTE - CONVENIO CORRESPONSALES 25458")
+
+		pdf.SetXY(158, rightSectionY+6)
+		pdf.Cell(60, 3, "CORRESPONSALES HABILITADOS:")
+
+		pdf = image(pdf, path+"/img/corresponsales.png", 144, rightSectionY+9, 0, 8)
+		pdf = image(pdf, path+"/img/banco.PNG", 204, rightSectionY+11, 0, 5)
+		pdf = image(pdf, path+"/img/corresponsales-exito.png", 153, rightSectionY+16, 0, 9)
+	}
+
+	pdf.SetY(initialY + 19)
+
 	return pdf
 }
 
@@ -803,6 +813,12 @@ func agregarDatosAspirante(pdf *gofpdf.Fpdf, datos map[string]interface{}) *gofp
 	pdf.SetXY(142.9, pdf.GetY()+4)
 	fontStyle(pdf, "", 6.75, 0)
 	pdf.CellFormat(66, 3, tr(datos["Descripcion"].(string)), "", 0, "TL", false, 0, "")
+	pdf.SetXY(142.9, pdf.GetY()+5)
+	fontStyle(pdf, "", 6.75, 0)
+	pdf.CellFormat(66, 3, "PAGOS UNICAMENTE POR CODIGO DE BARRAS", "", 0, "TL", false, 0, "")
+	pdf.SetXY(142.9, pdf.GetY()+3)
+	fontStyle(pdf, "", 6.75, 0)
+	pdf.CellFormat(66, 3, "Y EN EFECTIVO", "", 0, "TL", false, 0, "")
 
 	pdf.SetXY(7, ynow+45)
 

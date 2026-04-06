@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/services"
+	"github.com/udistrital/inscripcion_mid/services"
 	"github.com/udistrital/utils_oas/errorhandler"
 )
 
@@ -76,10 +76,15 @@ func (c *CuposController) GetOne() {
 // @Param	offset	query	string	false	"Start position of result set. Must be an integer"
 // @Success 200 {object} models.Cupos
 // @Failure 403
-// @router / [get]
+// @router /:periodo/:proyecto/:tipo [get]
 func (c *CuposController) GetAll() {
 	defer errorhandler.HandlePanic(&c.Controller)
-	respuesta := services.GetAllCuposInscripcion()
+
+	periodo := c.Ctx.Input.Param(":periodo")
+	proyecto := c.Ctx.Input.Param(":proyecto")
+	tipo := c.Ctx.Input.Param(":tipo")
+
+	respuesta := services.GetAllCuposInscripcion(periodo, proyecto, tipo)
 	c.Ctx.Output.SetStatus(respuesta.Status)
 	c.Data["json"] = respuesta
 	c.ServeJSON()

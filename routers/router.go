@@ -11,7 +11,7 @@ import (
 	"github.com/udistrital/utils_oas/errorhandler"
 
 	"github.com/astaxie/beego"
-	"github.com/udistrital/sga_inscripcion_mid/controllers"
+	"github.com/udistrital/inscripcion_mid/controllers"
 )
 
 func init() {

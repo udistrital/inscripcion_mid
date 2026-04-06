@@ -11,16 +11,17 @@ import (
 
 /*
 Data recibida
-{
-   "Nombre":"Prueba Aspirante uno ",
-   "Documento":"1234456",
-   "Periodo":"2024-1",
-   "Proyecto":"Doctorado Estudio Artisticos",
-   "Comprobante":"8702",
-   "Fecha_pago":"15/03/2024",
-   "Descripcion":"Matricula",
-   "ValorMatricula":154700
-}
+
+	{
+	   "Nombre":"Prueba Aspirante uno ",
+	   "Documento":"1234456",
+	   "Periodo":"2024-1",
+	   "Proyecto":"Doctorado Estudio Artisticos",
+	   "Comprobante":"8702",
+	   "Fecha_pago":"15/03/2024",
+	   "Descripcion":"Matricula",
+	   "ValorMatricula":154700
+	}
 */
 func GenerarReciboLiquidacionPost(dataRecibo []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var data map[string]interface{}

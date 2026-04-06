@@ -4,7 +4,7 @@ import (
 	"github.com/astaxie/beego"
 
 	//"github.com/astaxie/beego/httplib"
-	"github.com/udistrital/sga_inscripcion_mid/services"
+	"github.com/udistrital/inscripcion_mid/services"
 	"github.com/udistrital/utils_oas/errorhandler"
 )
 

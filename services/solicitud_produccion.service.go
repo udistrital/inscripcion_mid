@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/sga_inscripcion_mid/helpers"
+	"github.com/udistrital/inscripcion_mid/helpers"
 	"github.com/udistrital/utils_oas/requestresponse"
 )
 
-func PostAlertSolicitud(idTercero string, idTipoProduccionSrt string, data []byte) (APIResponseDTO requestresponse.APIResponse){
+func PostAlertSolicitud(idTercero string, idTipoProduccionSrt string, data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	idTipoProduccion, _ := strconv.Atoi(idTipoProduccionSrt)
 
 	//resultado experiencia
@@ -28,7 +28,7 @@ func PostAlertSolicitud(idTercero string, idTipoProduccionSrt string, data []byt
 				if resultadoPutSolicitudDocente, errPut := helpers.PutSolicitudDocente(SolicitudProduccionPut, idStr); errPut == nil {
 					resultado = resultadoPutSolicitudDocente
 					APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
-					} else {
+				} else {
 					logs.Error(errPut)
 					APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errPut)
 					return APIResponseDTO
@@ -52,7 +52,7 @@ func PostAlertSolicitud(idTercero string, idTipoProduccionSrt string, data []byt
 	return APIResponseDTO
 }
 
-func PutResultado(idProduccion string, data []byte)(APIResponseDTO requestresponse.APIResponse) {
+func PutResultado(idProduccion string, data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var SolicitudProduccion map[string]interface{}
 	if err := json.Unmarshal(data, &SolicitudProduccion); err == nil {
 		if SolicitudProduccionResult, errPuntaje := helpers.GenerateResult(SolicitudProduccion); errPuntaje == nil {
@@ -70,7 +70,7 @@ func PutResultado(idProduccion string, data []byte)(APIResponseDTO requestrespon
 	return APIResponseDTO
 }
 
-func PostSolicitudEvaluacion(idSolicitud string, idSolicitudCoincidencia string, idTercero string, data []byte)(APIResponseDTO requestresponse.APIResponse){
+func PostSolicitudEvaluacion(idSolicitud string, idSolicitudCoincidencia string, idTercero string, data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	//resultado experiencia
 	resultado := make(map[string]interface{})
 	var SolicitudProduccion map[string]interface{}
@@ -80,7 +80,7 @@ func PostSolicitudEvaluacion(idSolicitud string, idSolicitudCoincidencia string,
 			if len(SolicitudProduccionClone) > 0 {
 				resultado = SolicitudProduccion
 				APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
-					return APIResponseDTO
+				return APIResponseDTO
 			}
 		} else {
 			logs.Error(errClone)
@@ -94,4 +94,3 @@ func PostSolicitudEvaluacion(idSolicitud string, idSolicitudCoincidencia string,
 	}
 	return APIResponseDTO
 }
-

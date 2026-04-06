@@ -7,8 +7,9 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
-	"github.com/udistrital/sga_inscripcion_mid/helpers"
-	"github.com/udistrital/sga_inscripcion_mid/utils"
+	"github.com/udistrital/inscripcion_mid/helpers"
+	"github.com/udistrital/inscripcion_mid/models"
+	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"github.com/udistrital/utils_oas/time_bogota"
@@ -24,62 +25,153 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var SolicitudEvolucionEstadoPost map[string]interface{}
 	resultado := make(map[string]interface{})
 	var errorGetAll bool
+	var transferencia map[string]interface{}
+	var reingreso map[string]interface{}
+
 	if err := json.Unmarshal(data, &SolicitudInscripcion); err == nil {
-		inscripcion := map[string]interface{}{
-			"InscripcionId": map[string]interface{}{
-				"Id": SolicitudInscripcion["InscripcionId"].(float64)},
-			"CodigoEstudiante": SolicitudInscripcion["Codigo_estudiante"],
-			"MotivoRetiro":     fmt.Sprintf("%v", SolicitudInscripcion["Motivo_retiro"]),
-			"Activo":           true,
-			"CantidadCreditos": SolicitudInscripcion["Cantidad_creditos"].(float64),
-			"DocumentoId":      "",
-			// TRANSFERENCIA
-			"TransferenciaInterna":       SolicitudInscripcion["Interna"].(bool),
-			"UniversidadProviene":        fmt.Sprintf("%v", SolicitudInscripcion["Universidad"]),
-			"ProyectoCurricularProviene": fmt.Sprintf("%v", SolicitudInscripcion["Proyecto_origen"]),
-			"CodigoEstudianteProviene":   fmt.Sprintf("%v", SolicitudInscripcion["Codigo_estudiante"]),
-			"UltimoSemestreCursado":      SolicitudInscripcion["Ultimo_semestre"].(float64),
-			// REINTEGRO
-			"CanceloSemestre":  SolicitudInscripcion["Cancelo"],
-			"SolicitudAcuerdo": SolicitudInscripcion["Acuerdo"],
+		var inscripcionId float64
+		if SolicitudInscripcion["InscripcionId"] != nil {
+			inscripcionId, _ = SolicitudInscripcion["InscripcionId"].(float64)
 		}
 
-		auxDoc := []map[string]interface{}{}
-		documento := map[string]interface{}{
-			"IdTipoDocumento": SolicitudInscripcion["Documento"].(map[string]interface{})["IdTipoDocumento"],
-			"nombre":          SolicitudInscripcion["Documento"].(map[string]interface{})["nombre"],
-			"metadatos":       SolicitudInscripcion["Documento"].(map[string]interface{})["metadatos"],
-			"descripcion":     SolicitudInscripcion["Documento"].(map[string]interface{})["descripcion"],
-			"file":            SolicitudInscripcion["Documento"].(map[string]interface{})["file"],
+		var cantidadCreditos float64
+		if SolicitudInscripcion["Cantidad_creditos"] != nil {
+			cantidadCreditos, _ = SolicitudInscripcion["Cantidad_creditos"].(float64)
 		}
-		auxDoc = append(auxDoc, documento)
-		doc, errDoc := helpers.RegistrarDoc(auxDoc)
-		if errDoc == nil {
-			docTem := map[string]interface{}{
-				"Nombre":        doc.(map[string]interface{})["Nombre"].(string),
-				"Enlace":        doc.(map[string]interface{})["Enlace"],
-				"Id":            doc.(map[string]interface{})["Id"],
-				"TipoDocumento": doc.(map[string]interface{})["TipoDocumento"],
-				"Activo":        doc.(map[string]interface{})["Activo"],
+
+		var ultimoSemestre float64
+		if SolicitudInscripcion["Ultimo_semestre"] != nil {
+			ultimoSemestre, _ = SolicitudInscripcion["Ultimo_semestre"].(float64)
+		}
+
+		var transferenciaInterna bool
+		if SolicitudInscripcion["Interna"] != nil {
+			transferenciaInterna, _ = SolicitudInscripcion["Interna"].(bool)
+		}
+
+		switch SolicitudInscripcion["Tipo"] {
+		case "Transferencia interna", "Transferencia externa":
+
+			transferencia = map[string]interface{}{
+				"InscripcionId": map[string]interface{}{
+					"Id": inscripcionId},
+				"CodigoEstudiante": SolicitudInscripcion["Codigo_estudiante"],
+				"MotivoRetiro":     fmt.Sprintf("%v", SolicitudInscripcion["Motivo_retiro"]),
+				"Activo":           true,
+				"CantidadCreditos": cantidadCreditos,
+				"DocumentoId":      "",
+				// TRANSFERENCIA
+				"TransferenciaInterna":       transferenciaInterna,
+				"UniversidadProviene":        fmt.Sprintf("%v", SolicitudInscripcion["Universidad"]),
+				"ProyectoCurricularProviene": fmt.Sprintf("%v", SolicitudInscripcion["Proyecto_origen"]),
+				"CodigoEstudianteProviene":   fmt.Sprintf("%v", SolicitudInscripcion["Codigo_estudiante"]),
+				"UltimoSemestreCursado":      ultimoSemestre,
+				// // REINTEGRO
+				// "CanceloSemestre":  SolicitudInscripcion["Cancelo"],
+				// "SolicitudAcuerdo": SolicitudInscripcion["Acuerdo"],
 			}
-			inscripcion["DocumentoId"], _ = strconv.Atoi(fmt.Sprintf("%v", docTem["Id"]))
-		}
 
-		if fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Transferencia interna" || fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Transferencia externa" {
-			errInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"transferencia", "POST", &inscripcionRealizada, inscripcion)
+			auxDoc := []map[string]interface{}{}
+			documento := map[string]interface{}{
+				"IdTipoDocumento": SolicitudInscripcion["Documento"].(map[string]interface{})["IdTipoDocumento"],
+				"nombre":          SolicitudInscripcion["Documento"].(map[string]interface{})["nombre"],
+				"metadatos":       SolicitudInscripcion["Documento"].(map[string]interface{})["metadatos"],
+				"descripcion":     SolicitudInscripcion["Documento"].(map[string]interface{})["descripcion"],
+				"file":            SolicitudInscripcion["Documento"].(map[string]interface{})["file"],
+			}
+			auxDoc = append(auxDoc, documento)
+
+			// doc, errDoc := helpers.RegistrarDoc(auxDoc)
+			// if errDoc == nil {
+			// 	docTem := map[string]interface{}{
+			// 		"Nombre":        doc.(map[string]interface{})["Nombre"].(string),
+			// 		"Enlace":        doc.(map[string]interface{})["Enlace"],
+			// 		"Id":            doc.(map[string]interface{})["Id"],
+			// 		"TipoDocumento": doc.(map[string]interface{})["TipoDocumento"],
+			// 		"Activo":        doc.(map[string]interface{})["Activo"],
+			// 	}
+			// 	inscripcion["DocumentoId"], _ = strconv.Atoi(fmt.Sprintf("%v", docTem["Id"]))
+			// }
+
+			// if fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Transferencia interna" || fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Transferencia externa" {
+			// 	errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"transferencia", "POST", &inscripcionRealizada, inscripcion)
+
+			// 	if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
+			// 		errorGetAll = true
+			// 		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcion.Error())
+			// 	}
+
+			// } else if fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Reingreso" {
+			// 	errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"reintegro", "POST", &inscripcionRealizada, inscripcion)
+
+			// 	if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
+			// 		errorGetAll = true
+			// 		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcion.Error())
+			// 	}
+			// }
+
+			errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"transferencia", "POST", &inscripcionRealizada, transferencia)
 
 			if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
 				errorGetAll = true
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcion.Error())
 			}
 
-		} else if fmt.Sprintf("%v", SolicitudInscripcion["Tipo"]) == "Reingreso" {
-			errInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"reintegro", "POST", &inscripcionRealizada, inscripcion)
-
-			if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
-				errorGetAll = true
-				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcion.Error())
+		case "Reingreso":
+			// fmt.Println("///////  Entro a reingresos    ---------")
+			reingreso = map[string]interface{}{
+				"InscripcionId":    inscripcionId,
+				"CodigoEstudiante": SolicitudInscripcion["CodigoEstudiante"],
+				"MotivoRetiro":     fmt.Sprintf("%v", SolicitudInscripcion["MotivoRetiro"]),
+				"Activo":           true,
+				"Telefono1":        SolicitudInscripcion["Telefono1"],
+				"Telefono2":        SolicitudInscripcion["Telefono2"],
 			}
+			errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"reintegro", "POST", &inscripcionRealizada, reingreso)
+
+			if errInscripcion != nil {
+				errorGetAll = true
+				APIResponseDTO = requestresponse.APIResponseDTO(false, 500, nil, errInscripcion.Error())
+				return APIResponseDTO
+			}
+
+			if inscripcionRealizada != nil {
+				if errorMsg, hasError := inscripcionRealizada["error"]; hasError {
+					logs.Error("Error del servicio de inscripción - error: ", errorMsg)
+					errorGetAll = true
+					APIResponseDTO = requestresponse.APIResponseDTO(false, 500, nil, errorMsg)
+					return APIResponseDTO
+				}
+				if status, hasStatus := inscripcionRealizada["Status"]; hasStatus {
+					if fmt.Sprintf("%v", status) == "400" || fmt.Sprintf("%v", status) == "404" || fmt.Sprintf("%v", status) == "500" {
+						logs.Error("Error del servicio de inscripción - Status: ", status)
+						errorGetAll = true
+						APIResponseDTO = requestresponse.APIResponseDTO(false, 500, nil, status)
+						return APIResponseDTO
+					}
+				}
+			}
+			if !errorGetAll {
+				APIResponseDTO = requestresponse.APIResponseDTO(true, 200, inscripcionRealizada, nil)
+				if inscripcionRealizada != nil {
+					if idInscripcion, ok := inscripcionRealizada["InscripcionId"]; ok {
+						var inscripcion map[string]interface{}
+						errGetInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &inscripcion)
+						if errGetInscripcion == nil && inscripcion != nil {
+							var estadoInscripcion []map[string]interface{}
+							errGetEstado := request.GetJson(beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:INSCREAL", &estadoInscripcion)
+							if errGetEstado == nil && len(estadoInscripcion) > 0 {
+								inscripcion["EstadoInscripcionId"] = estadoInscripcion[0]
+								var inscripcionPut map[string]interface{}
+								request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &inscripcionPut, inscripcion)
+							}
+						}
+					}
+				}
+			}
+
+			logs.Info("Reintegro creado exitosamente: ", inscripcionRealizada)
+			return APIResponseDTO
 		}
 
 		resultado = inscripcionRealizada
@@ -100,7 +192,7 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 			"SolicitudPadreId": nil,
 		}
 
-		errSolicitud := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud", "POST", &SolicitudPost, Solicitud)
+		errSolicitud := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud", "POST", &SolicitudPost, Solicitud)
 
 		if errSolicitud == nil {
 			if SolicitudPost["Success"] != false && fmt.Sprintf("%v", SolicitudPost) != "map[]" {
@@ -116,7 +208,7 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 					"Activo": true,
 				}
 
-				errSolicitante := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitante", "POST", &SolicitantePost, Solicitante)
+				errSolicitante := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitante", "POST", &SolicitantePost, Solicitante)
 				if errSolicitante == nil && fmt.Sprintf("%v", SolicitantePost["Status"]) != "400" {
 					if SolicitantePost != nil && fmt.Sprintf("%v", SolicitantePost) != "map[]" {
 						//POST a la tabla solicitud_evolucion estado
@@ -133,15 +225,15 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 							"FechaLimite": SolicitudInscripcion["FechaRadicacion"],
 						}
 
-						errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
+						errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
 						if errSolicitudEvolucionEstado == nil {
 							if SolicitudEvolucionEstadoPost != nil && fmt.Sprintf("%v", SolicitudEvolucionEstadoPost) != "map[]" {
 								resultado["Solicitante"] = SolicitantePost["Data"]
 								//cambia el estado de la inscripcion a "inscrito", que es de id "5"
-								resp, err := requestresponse.Get("http://"+beego.AppConfig.String("InscripcionService")+fmt.Sprintf("inscripcion/%v", SolicitudInscripcion["InscripcionId"]), requestresponse.ParseResonseNoFormat)
+								resp, err := requestresponse.Get(beego.AppConfig.String("InscripcionService")+fmt.Sprintf("inscripcion/%v", SolicitudInscripcion["InscripcionId"]), requestresponse.ParseResonseNoFormat)
 								if err == nil {
 									resp.(map[string]interface{})["EstadoInscripcionId"].(map[string]interface{})["Id"] = 5
-									resp, err = requestresponse.Put("http://"+beego.AppConfig.String("InscripcionService")+fmt.Sprintf("inscripcion/%v", SolicitudInscripcion["InscripcionId"]), resp, requestresponse.ParseResonseNoFormat)
+									resp, err = requestresponse.Put(beego.AppConfig.String("InscripcionService")+fmt.Sprintf("inscripcion/%v", SolicitudInscripcion["InscripcionId"]), resp, requestresponse.ParseResonseNoFormat)
 								} else {
 									APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, "Error al editar estado de inscripción")
 								}
@@ -151,10 +243,11 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 							}
 						} else {
 							var resultado2 map[string]interface{}
-							request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+fmt.Sprintf("%v", IdSolicitud), "DELETE", &resultado2, nil)
-							request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitante/"+fmt.Sprintf("%v", SolicitantePost["Id"]), "DELETE", &resultado2, nil)
+							request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+fmt.Sprintf("%v", IdSolicitud), "DELETE", &resultado2, nil)
+							request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitante/"+fmt.Sprintf("%v", SolicitantePost["Id"]), "DELETE", &resultado2, nil)
 							errorGetAll = true
-							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errSolicitante.Error())
+							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errSolicitudEvolucionEstado.Error())
+							// APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errSolicitante.Error())
 						}
 					} else {
 						errorGetAll = true
@@ -162,7 +255,7 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 					}
 				} else {
 					var resultado2 map[string]interface{}
-					request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+fmt.Sprintf("%v", IdSolicitud), "DELETE", &resultado2, nil)
+					request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+fmt.Sprintf("%v", IdSolicitud), "DELETE", &resultado2, nil)
 					errorGetAll = true
 					APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errSolicitante.Error())
 				}
@@ -207,7 +300,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 
 	if err := json.Unmarshal(data, &SolicitudInscripcion); err == nil {
 		/// sacar id de transferencia/reingreso desde solicitud
-		errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &SolicitudGet)
+		errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &SolicitudGet)
 		if errSolicitud == nil {
 			if SolicitudGet != nil && fmt.Sprintf("%v", SolicitudGet["Status"]) != "404" {
 				var sol map[string]interface{}
@@ -216,7 +309,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 					esReingreso := sol["EsReingreso"]
 
 					if esReingreso == true {
-						errInscripcionGet := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", idTransferenciaReingreso), &InscripcionGet)
+						errInscripcionGet := request.GetJson(beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", idTransferenciaReingreso), &InscripcionGet)
 						if errInscripcionGet == nil {
 
 							InscripcionGet["CodigoEstudiante"] = SolicitudInscripcion["Codigo_estudiante"]
@@ -251,7 +344,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 								InscripcionGet["DocumentoId"], _ = strconv.Atoi(fmt.Sprintf("%v", SolicitudInscripcion["Documento"]))
 							}
 
-							errInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", idTransferenciaReingreso), "PUT", &inscripcionRealizada, InscripcionGet)
+							errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", idTransferenciaReingreso), "PUT", &inscripcionRealizada, InscripcionGet)
 							if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
 								errorGetAll = true
 								APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInscripcion.Error())
@@ -260,7 +353,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 							}
 						}
 					} else {
-						errInscripcionGet := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", idTransferenciaReingreso), &InscripcionGet)
+						errInscripcionGet := request.GetJson(beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", idTransferenciaReingreso), &InscripcionGet)
 						if errInscripcionGet == nil {
 
 							InscripcionGet["MotivoRetiro"] = fmt.Sprintf("%v", SolicitudInscripcion["Motivo_retiro"])
@@ -297,7 +390,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 								InscripcionGet["DocumentoId"], _ = strconv.Atoi(fmt.Sprintf("%v", SolicitudInscripcion["Documento"]))
 							}
 
-							errInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", idTransferenciaReingreso), "PUT", &inscripcionRealizada, InscripcionGet)
+							errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", idTransferenciaReingreso), "PUT", &inscripcionRealizada, InscripcionGet)
 
 							if errInscripcion != nil && inscripcionRealizada["Status"] == "400" {
 								errorGetAll = true
@@ -312,23 +405,23 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 					SolicitudGet["EstadoTipoSolicitudId"] = map[string]interface{}{"Id": IdEstadoTipoSolicitud}
 
 					// Actualización del anterior estado
-					errAntEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
+					errAntEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
 					if errAntEstado == nil {
 						if anteriorEstado != nil && fmt.Sprintf("%v", anteriorEstado) != "map[]" {
 
 							anteriorEstado[0]["Activo"] = false
 							estadoAnteriorId := fmt.Sprintf("%v", anteriorEstado[0]["Id"])
 
-							errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estadoAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
+							errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estadoAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
 							if errSolicitudEvolucionEstado == nil {
 
 								// Búsqueda de estado relacionado con las prácticas académicas
-								errTipoSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+								errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 								if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 									id := fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 									idEstado := fmt.Sprintf("%v", "SOL")
 
-									errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.CodigoAbreviacion:"+idEstado+",TipoSolicitud.Id:"+id, &NuevoEstado)
+									errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.CodigoAbreviacion:"+idEstado+",TipoSolicitud.Id:"+id, &NuevoEstado)
 									if errEstado == nil {
 
 										estadoId := NuevoEstado["Data"]
@@ -349,14 +442,14 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 											"FechaLimite": fmt.Sprintf("%v", SolicitudInscripcion["FechaRadicacion"]),
 										}
 
-										errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
+										errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
 										if errSolicitudEvolucionEstado == nil {
 											if SolicitudEvolucionEstadoPost != nil && fmt.Sprintf("%v", SolicitudEvolucionEstadoPost) != "map[]" {
 
 												SolicitudGet["EstadoTipoSolicitudId"] = SolicitudEvolucionEstadoPost["Data"].(map[string]interface{})["EstadoTipoSolicitudId"]
 												SolicitudGet["EstadoTipoSolicitudId"].(map[string]interface{})["Activo"] = true
 
-												errPutEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, SolicitudGet)
+												errPutEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, SolicitudGet)
 												if errPutEstado == nil {
 													if SolicitudPut["Status"] != "400" {
 														resultado["solicitud"] = SolicitudPut
@@ -398,7 +491,7 @@ func PutSolicitudInfo(idSolicitud string, data []byte) (APIResponseDTO requestre
 						return APIResponseDTO
 					}
 
-					errSolicitud := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPost, SolicitudGet)
+					errSolicitud := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPost, SolicitudGet)
 					if errSolicitud == nil {
 						if SolicitudPost["Success"] != false && fmt.Sprintf("%v", SolicitudPost) != "map[]" {
 							resultado["Solicitud"] = SolicitudPost["Data"]
@@ -457,7 +550,7 @@ func PutInscripcion(idSolicitud string, data []byte) (APIResponseDTO requestresp
 	if err := json.Unmarshal(data, &RespuestaSolicitud); err == nil {
 
 		// Consulta de información de la solicitud
-		errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &Solicitud)
+		errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &Solicitud)
 		if errSolicitud == nil {
 			if Solicitud != nil && fmt.Sprintf("%v", Solicitud["Status"]) != "404" {
 
@@ -466,13 +559,13 @@ func PutInscripcion(idSolicitud string, data []byte) (APIResponseDTO requestresp
 					idInscripcion := sol["InscripcionId"]
 
 					// Actualizar inscripción
-					errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &Inscripcion)
+					errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &Inscripcion)
 					if errInscripcion == nil {
-						errEstadoInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:"+fmt.Sprintf("%v", RespuestaSolicitud["EstadoAbreviacion"]), &EstadoInscripcion)
+						errEstadoInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:"+fmt.Sprintf("%v", RespuestaSolicitud["EstadoAbreviacion"]), &EstadoInscripcion)
 						if errEstadoInscripcion == nil {
 							Inscripcion["EstadoInscripcionId"] = EstadoInscripcion[0]
 
-							errPutInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &InscripcionPut, Inscripcion)
+							errPutInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &InscripcionPut, Inscripcion)
 							if errPutInscripcion == nil {
 								resultado["inscripcion"] = InscripcionPut
 							} else {
@@ -491,23 +584,23 @@ func PutInscripcion(idSolicitud string, data []byte) (APIResponseDTO requestresp
 					}
 
 					// Actualización del anterior estado
-					errAntEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
+					errAntEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
 					if errAntEstado == nil {
 						if anteriorEstado != nil && fmt.Sprintf("%v", anteriorEstado) != "map[]" {
 
 							anteriorEstado[0]["Activo"] = false
 							estasAnteriorId := fmt.Sprintf("%v", anteriorEstado[0]["Id"])
 
-							errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estasAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
+							errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estasAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
 							if errSolicitudEvolucionEstado == nil {
 
 								// Búsqueda de estado relacionado con las prácticas académicas
 								idEstado := fmt.Sprintf("%v", RespuestaSolicitud["EstadoId"])
-								errTipoSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+								errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 								if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 									var id = fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 
-									errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.Id:"+
+									errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.Id:"+
 										idEstado+",TipoSolicitud.Id:"+id, &NuevoEstado)
 									if errEstado == nil {
 
@@ -529,7 +622,7 @@ func PutInscripcion(idSolicitud string, data []byte) (APIResponseDTO requestresp
 											"FechaLimite": fmt.Sprintf("%v", RespuestaSolicitud["FechaRespuesta"]),
 										}
 
-										errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
+										errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
 										if errSolicitudEvolucionEstado == nil {
 											if SolicitudEvolucionEstadoPost != nil && fmt.Sprintf("%v", SolicitudEvolucionEstadoPost) != "map[]" {
 
@@ -546,7 +639,7 @@ func PutInscripcion(idSolicitud string, data []byte) (APIResponseDTO requestresp
 													Solicitud["SolicitudFinalizada"] = true
 												}
 
-												errPutEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, Solicitud)
+												errPutEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, Solicitud)
 												if errPutEstado == nil {
 													if SolicitudPut["Status"] != "400" {
 														resultado["solicitud"] = SolicitudPut
@@ -638,7 +731,7 @@ func SolicitudPut(idSolicitud string, data []byte) (APIResponseDTO requestrespon
 	if err := json.Unmarshal(data, &RespuestaSolicitud); err == nil {
 
 		// Consulta de información de la solicitud
-		errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &Solicitud)
+		errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, &Solicitud)
 		if errSolicitud == nil {
 			if Solicitud != nil && fmt.Sprintf("%v", Solicitud["Status"]) != "404" {
 
@@ -655,13 +748,13 @@ func SolicitudPut(idSolicitud string, data []byte) (APIResponseDTO requestrespon
 
 						// Actualizar inscripción
 						idInscripcion := sol["InscripcionId"]
-						errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &Inscripcion)
+						errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), &Inscripcion)
 						if errInscripcion == nil {
-							errEstadoInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:"+fmt.Sprintf("%v", CodigoAbreviacion), &EstadoInscripcion)
+							errEstadoInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"estado_inscripcion?query=CodigoAbreviacion:"+fmt.Sprintf("%v", CodigoAbreviacion), &EstadoInscripcion)
 							if errEstadoInscripcion == nil {
 								Inscripcion["EstadoInscripcionId"] = EstadoInscripcion[0]
 
-								errPutInscripcion := request.SendJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &InscripcionPut, Inscripcion)
+								errPutInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%v", idInscripcion), "PUT", &InscripcionPut, Inscripcion)
 								if errPutInscripcion == nil {
 									resultado["inscripcion"] = InscripcionPut
 								} else {
@@ -686,23 +779,23 @@ func SolicitudPut(idSolicitud string, data []byte) (APIResponseDTO requestrespon
 				}
 
 				// Actualización del anterior estado
-				errAntEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
+				errAntEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado?query=activo:true,solicitudId.Id:"+idSolicitud, &anteriorEstado)
 				if errAntEstado == nil {
 					if anteriorEstado != nil && fmt.Sprintf("%v", anteriorEstado) != "map[]" {
 
 						anteriorEstado[0]["Activo"] = false
 						estasAnteriorId := fmt.Sprintf("%v", anteriorEstado[0]["Id"])
 
-						errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estasAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
+						errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado/"+estasAnteriorId, "PUT", &anteriorEstadoPost, anteriorEstado[0])
 						if errSolicitudEvolucionEstado == nil {
 
 							// Búsqueda de estado relacionado con las prácticas académicas
-							errTipoSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+							errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 							if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 								id := fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 								idEstado := fmt.Sprintf("%v", RespuestaSolicitud["EstadoId"].(map[string]interface{})["Id"])
 
-								errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.Id:"+idEstado+",TipoSolicitud.Id:"+id, &NuevoEstado)
+								errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=EstadoId.Id:"+idEstado+",TipoSolicitud.Id:"+id, &NuevoEstado)
 								if errEstado == nil {
 
 									estadoId := NuevoEstado["Data"]
@@ -723,7 +816,7 @@ func SolicitudPut(idSolicitud string, data []byte) (APIResponseDTO requestrespon
 										"FechaLimite": fmt.Sprintf("%v", RespuestaSolicitud["FechaRespuesta"]),
 									}
 
-									errSolicitudEvolucionEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
+									errSolicitudEvolucionEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud_evolucion_estado", "POST", &SolicitudEvolucionEstadoPost, SolicitudEvolucionEstado)
 									if errSolicitudEvolucionEstado == nil {
 										if SolicitudEvolucionEstadoPost != nil && fmt.Sprintf("%v", SolicitudEvolucionEstadoPost) != "map[]" {
 											var DocumentoId int
@@ -784,7 +877,7 @@ func SolicitudPut(idSolicitud string, data []byte) (APIResponseDTO requestrespon
 												Solicitud["SolicitudFinalizada"] = true
 											}
 
-											errPutEstado := request.SendJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, Solicitud)
+											errPutEstado := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud/"+idSolicitud, "PUT", &SolicitudPut, Solicitud)
 											if errPutEstado == nil {
 												if SolicitudPut["Status"] != "400" {
 													resultado["solicitud"] = SolicitudPut
@@ -857,7 +950,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 	var resultado map[string]interface{}
 	var calendarioGet []map[string]interface{}
 	var inscripcionGet []map[string]interface{}
-	var codigosGet []map[string]interface{}
+	var codigosGet []string
 	var identificacionGet []map[string]interface{}
 	var proyectoGet []map[string]interface{}
 	var periodoGet map[string]interface{}
@@ -868,9 +961,13 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 	var jsondata map[string]interface{}
 	var Solicitudes []map[string]interface{}
 	var tipoSolicitud map[string]interface{}
+	var datosEst []models.DatosIdentificacion
+	var datosEstudianteXML map[string]interface{}
+	var codigoProyectoStr string
+	var proyectoXML map[string]interface{}
 
 	// Incripción
-	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"/inscripcion?query=Id:"+fmt.Sprintf("%v", idInscripcion), &inscripcionGet)
+	errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"/inscripcion?query=Id:"+fmt.Sprintf("%v", idInscripcion), &inscripcionGet)
 	if errInscripcion == nil && fmt.Sprintf("%v", inscripcionGet[0]) != "map[]" {
 
 		resultado = map[string]interface{}{
@@ -878,10 +975,17 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				"Nombre": inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["Nombre"],
 				"Id":     inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["Id"],
 			},
+			"Estado": map[string]interface{}{
+				"Id":                inscripcionGet[0]["EstadoInscripcionId"].(map[string]interface{})["Id"],
+				"CodigoAbreviacion": inscripcionGet[0]["EstadoInscripcionId"].(map[string]interface{})["CodigoAbreviacion"],
+				"Nombre":            inscripcionGet[0]["EstadoInscripcionId"].(map[string]interface{})["Nombre"],
+			},
 		}
 
+		proyectoInscripcion := fmt.Sprintf("%v", inscripcionGet[0]["ProgramaAcademicoId"])
+
 		// Periodo de la inscripción
-		errPeriodo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", inscripcionGet[0]["PeriodoId"]), &periodoGet)
+		errPeriodo := request.GetJson(beego.AppConfig.String("ParametroService")+"periodo/"+fmt.Sprintf("%v", inscripcionGet[0]["PeriodoId"]), &periodoGet)
 		if errPeriodo == nil && fmt.Sprintf("%v", periodoGet["Data"]) != "[map[]]" {
 			if periodoGet["Status"] != "404" {
 				resultado["Periodo"] = map[string]interface{}{
@@ -902,7 +1006,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 		}
 
 		// Nivel de la inscripción
-		errNivel := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion?query=Id:"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
+		errNivel := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion?query=Id:"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
 		if errNivel == nil && fmt.Sprintf("%v", nivelGet[0]) != "[map[]]" {
 			resultado["Nivel"] = map[string]interface{}{
 				"Id":     nivelGet[0]["Id"],
@@ -915,7 +1019,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 		}
 
 		// Calendario correspondiente al periodo de inscripción
-		errCalendario := request.GetJson("http://"+beego.AppConfig.String("EventoService")+"calendario?query=periodo_id:"+fmt.Sprintf("%v", inscripcionGet[0]["PeriodoId"]), &calendarioGet)
+		errCalendario := request.GetJson(beego.AppConfig.String("EventoService")+"calendario?query=periodo_id:"+fmt.Sprintf("%v", inscripcionGet[0]["PeriodoId"]), &calendarioGet)
 		if errCalendario == nil {
 			if fmt.Sprintf("%v", calendarioGet) != "[map[]]" {
 				indice := 0
@@ -931,25 +1035,66 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				}
 
 				// Código del estudiante
-				errCodigoEst := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?query=TerceroId.Id:"+
-					fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"])+",InfoComplementariaId.Id:93&limit=0", &codigosGet)
-				if errCodigoEst == nil && fmt.Sprintf("%v", codigosGet) != "[map[]]" {
+				errCodigoEst := request.GetJson(beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+
+					fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"])+",TipoDocumentoId.CodigoAbreviacion:CODE&limit=0", &datosEst)
+
+				if errCodigoEst == nil {
+					codigoUnico := make(map[string]bool)
+					for _, dato := range datosEst {
+						if !codigoUnico[dato.Numero] {
+							codigosGet = append(codigosGet, dato.Numero)
+							codigoUnico[dato.Numero] = true
+						}
+					}
 
 					for _, codigo := range codigosGet {
-						errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=Codigo:"+codigo["Dato"].(string)[5:8], &proyectoGet)
-						if errProyecto == nil && fmt.Sprintf("%v", proyectoGet) != "[map[]]" {
-							if calendarioGet[indice]["DependenciaId"] != nil {
-								for _, proyectoCalendario := range calendarioGet[indice]["DependenciaId"].([]interface{}) {
-									if proyectoGet[0]["Id"] == proyectoCalendario {
 
-										codigoAux := map[string]interface{}{
-											"Nombre":         codigo["Dato"].(string) + " Proyecto: " + codigo["Dato"].(string)[5:8] + " - " + proyectoGet[0]["Nombre"].(string),
-											"IdProyecto":     proyectoGet[0]["Id"],
-											"NombreProyecto": proyectoGet[0]["Nombre"],
-											"Codigo":         codigo["Dato"].(string),
+						errCodigoEstJBPM := request.GetJsonWSO2(beego.AppConfig.String("AcademicaEspacioAcademicoService")+"datos_estudiante/"+fmt.Sprint(codigo), &datosEstudianteXML)
+
+						if errCodigoEstJBPM == nil && datosEstudianteXML != nil && fmt.Sprintf("%v", datosEstudianteXML) != "map[]" {
+							dataACEST, _ := datosEstudianteXML["estudianteCollection"].(map[string]interface{})
+							dataEstudianteACEST, _ := dataACEST["datosEstudiante"].([]interface{})
+							if len(dataACEST) > 0 && len(dataEstudianteACEST) > 0 {
+								codigoProyectoStr = dataEstudianteACEST[0].(map[string]interface{})["carrera"].(string)
+							}
+						}
+
+						codigoProyecto, err := strconv.Atoi(codigoProyectoStr)
+						if err != nil {
+							fmt.Printf("Error converting codigoProyecto to int: %v\n", err)
+							continue
+						}
+
+						codigoEstudiante, err := strconv.Atoi(codigo)
+						if err != nil {
+							fmt.Printf("Error converting codigoEstudiante to int: %v\n", err)
+							continue
+						}
+
+						errProyectos := request.GetJsonWSO2(beego.AppConfig.String("AcademicaEspacioAcademicoService")+"proyectos_snies/"+codigoProyectoStr, &proyectoXML)
+
+						// si existe contenido en la respuesta hay al menos un proyecto valido
+						if errProyectos == nil && len(proyectoXML["proyectos"].(map[string]interface{})) > 0 {
+							// códigos SNIES para comparar
+							if auxProyecto, ok := proyectoXML["proyectos"].(map[string]interface{})["proyecto"].([]interface{}); ok {
+								codigoProyectoSnies := fmt.Sprintf("%v", auxProyecto[0].(map[string]interface{})["AS_CRA_COD_SNIES"])
+								errProyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=CodigoSnies:"+codigoProyectoSnies, &proyectoGet)
+
+								if errProyecto == nil && fmt.Sprintf("%v", proyectoGet) != "[map[]]" {
+									if calendarioGet[indice]["DependenciaId"] != nil {
+										for _, proyectoCalendario := range calendarioGet[indice]["DependenciaId"].([]interface{}) {
+											if proyectoGet[0]["Id"] == proyectoCalendario && strconv.Itoa(int(proyectoGet[0]["Id"].(float64))) == proyectoInscripcion {
+												{
+													codigoAux := map[string]interface{}{
+														"IdProyectoAcademico": proyectoGet[0]["Id"],
+														"IdProyectoCondor":    codigoProyecto,
+														"NombreProyecto":      proyectoGet[0]["Nombre"],
+														"Codigo":              codigoEstudiante,
+													}
+													codigosRes = append(codigosRes, codigoAux)
+												}
+											}
 										}
-
-										codigosRes = append(codigosRes, codigoAux)
 									}
 								}
 							}
@@ -959,7 +1104,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				resultado["CodigoEstudiante"] = codigosRes
 
 				// información del estudiante
-				errIdentificacion := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"]), &identificacionGet)
+				errIdentificacion := request.GetJson(beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"]), &identificacionGet)
 				if errIdentificacion == nil && fmt.Sprintf("%v", identificacionGet) != "[map[]]" {
 
 					datosEstudiante := map[string]interface{}{
@@ -975,7 +1120,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				}
 
 				// Proyecto asociado al código
-				errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendarioGet[indice]["Nivel"]), &proyectoGet)
+				errProyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendarioGet[indice]["Nivel"]), &proyectoGet)
 				if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
 					for _, proyectoAux := range proyectoGet {
 						if calendarioGet[indice]["DependenciaId"] != nil {
@@ -1019,12 +1164,11 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				resultado["ProyectoCodigo"] = proyectosCodigos
 
 				// Información de la solicitud
-				errTipoSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+				errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 				if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 					var id = fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
-					errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitante?query=TerceroId:"+fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"])+",SolicitudId.EstadoTipoSolicitudId.TipoSolicitud.Id:"+id, &Solicitudes)
+					errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitante?query=TerceroId:"+fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"])+",SolicitudId.EstadoTipoSolicitudId.TipoSolicitud.Id:"+id, &Solicitudes)
 
-					fmt.Println("http://" + beego.AppConfig.String("SolicitudDocenteService") + "solicitante?query=TerceroId:" + fmt.Sprintf("%v", inscripcionGet[0]["PersonaId"]) + ",SolicitudId.EstadoTipoSolicitudId.TipoSolicitud.Id:" + id)
 					if errSolicitud == nil {
 						if fmt.Sprintf("%v", Solicitudes) != "[map[]]" {
 
@@ -1043,7 +1187,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 
 										// Validación de reingresos y transferencias
 										if fmt.Sprintf("%t", solicitudJson["EsReingreso"]) == "true" {
-											errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", solicitudJson["TransferenciaReingresoId"]), &inscripcion)
+											errReingreso := request.GetJson(beego.AppConfig.String("InscripcionService")+"reintegro/"+fmt.Sprintf("%v", solicitudJson["TransferenciaReingresoId"]), &inscripcion)
 											if errReingreso == nil {
 												resultado["DatosInscripcion"] = map[string]interface{}{
 													"CodigoEstudiante":      inscripcion["CodigoEstudiante"],
@@ -1056,7 +1200,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 												}
 											}
 										} else {
-											errTransferencia := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", solicitudJson["TransferenciaReingresoId"]), &inscripcion)
+											errTransferencia := request.GetJson(beego.AppConfig.String("InscripcionService")+"transferencia/"+fmt.Sprintf("%v", solicitudJson["TransferenciaReingresoId"]), &inscripcion)
 											if errTransferencia == nil {
 												resultado["DatosInscripcion"] = map[string]interface{}{
 													"TransferenciaInterna":       inscripcion["TransferenciaInterna"],
@@ -1085,16 +1229,16 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 											}
 										}
 
-										estadoId := solicitud["SolicitudId"].(map[string]interface{})["EstadoTipoSolicitudId"].(map[string]interface{})["EstadoId"].(map[string]interface{})["Id"]
-										var estado map[string]interface{}
+										// estadoId := solicitud["SolicitudId"].(map[string]interface{})["EstadoTipoSolicitudId"].(map[string]interface{})["EstadoId"].(map[string]interface{})["Id"]
+										// var estado map[string]interface{}
 
-										errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado/"+fmt.Sprintf("%v", estadoId), &estado)
-										if errEstado == nil {
-											resultado["Estado"] = map[string]interface{}{
-												"Nombre": estado["Data"].(map[string]interface{})["Nombre"],
-												"Id":     estado["Data"].(map[string]interface{})["Id"],
-											}
-										}
+										// errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado/"+fmt.Sprintf("%v", estadoId), &estado)
+										// if errEstado == nil {
+										// 	resultado["Estado"] = map[string]interface{}{
+										// 		"Nombre": estado["Data"].(map[string]interface{})["Nombre"],
+										// 		"Id":     estado["Data"].(map[string]interface{})["Id"],
+										// 	}
+										// }
 
 										if err := json.Unmarshal([]byte(Resultado), &solicitudJson); err == nil {
 
@@ -1109,9 +1253,9 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 										}
 										break
 									} else {
-										resultado["Estado"] = map[string]interface{}{
-											"Nombre": "Pago",
-										}
+										// resultado["Estado"] = map[string]interface{}{
+										// 	"Nombre": "Pago",
+										// }
 									}
 								}
 
@@ -1151,7 +1295,7 @@ func GetSolicitudes() (APIResponseDTO requestresponse.APIResponse) {
 	var errorGetAll bool
 
 	// Ciclo for que recorre todas las solicitudes de transferencias y reingresos
-	errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud?query=EstadoTipoSolicitudId.TipoSolicitud.CodigoAbreviacion:TrnRe&limit=0", &Solicitudes)
+	errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud?query=EstadoTipoSolicitudId.TipoSolicitud.CodigoAbreviacion:TrnRe&limit=0", &Solicitudes)
 	resultadoAux = make([]map[string]interface{}, len(Solicitudes))
 	if errSolicitud == nil {
 		if fmt.Sprintf("%v", Solicitudes) != "[map[]]" {
@@ -1162,12 +1306,12 @@ func GetSolicitudes() (APIResponseDTO requestresponse.APIResponse) {
 				referencia := solicitud["Referencia"].(string)
 				if err := json.Unmarshal([]byte(referencia), &solicitudJson); err == nil {
 
-					errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Id:"+fmt.Sprintf("%v", solicitudJson["InscripcionId"]), &inscripcionGet)
+					errReingreso := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Id:"+fmt.Sprintf("%v", solicitudJson["InscripcionId"]), &inscripcionGet)
 					if errReingreso == nil {
 						if inscripcionGet != nil && fmt.Sprintf("%v", inscripcionGet[0]) != "map[]" {
 							ReciboInscripcion := fmt.Sprintf("%v", inscripcionGet[0]["ReciboInscripcion"])
 
-							errNivel := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
+							errNivel := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
 							if errNivel == nil {
 
 								resultadoAux[i] = map[string]interface{}{
@@ -1226,7 +1370,7 @@ func GetSolicitudesSegunPrograma(programaId string) (APIResponseDTO requestrespo
 	var errorGetAll bool
 
 	// Obtener todas las solicitudes de transferencias y reingresos
-	errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitud?query=EstadoTipoSolicitudId.TipoSolicitud.CodigoAbreviacion:TrnRe&limit=0", &Solicitudes)
+	errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitud?query=EstadoTipoSolicitudId.TipoSolicitud.CodigoAbreviacion:TrnRe&limit=0", &Solicitudes)
 	resultadoAux = make([]map[string]interface{}, 0)
 	if errSolicitud == nil {
 		if len(Solicitudes) > 0 {
@@ -1234,7 +1378,7 @@ func GetSolicitudesSegunPrograma(programaId string) (APIResponseDTO requestrespo
 				var solicitudJson map[string]interface{}
 				referencia := solicitud["Referencia"].(string)
 				if err := json.Unmarshal([]byte(referencia), &solicitudJson); err == nil {
-					errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=Id:"+fmt.Sprintf("%v", solicitudJson["InscripcionId"]), &inscripcionGet)
+					errReingreso := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Id:"+fmt.Sprintf("%v", solicitudJson["InscripcionId"]), &inscripcionGet)
 					if true {
 						if inscripcionGet != nil && len(inscripcionGet) > 0 {
 							ReciboInscripcion := fmt.Sprintf("%v", inscripcionGet[0]["ReciboInscripcion"])
@@ -1242,7 +1386,7 @@ func GetSolicitudesSegunPrograma(programaId string) (APIResponseDTO requestrespo
 							// Filtrar por programaId
 							programaAcademicoId := fmt.Sprintf("%v", inscripcionGet[0]["ProgramaAcademicoId"])
 							if programaAcademicoId == programaId {
-								errNivel := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
+								errNivel := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", inscripcionGet[0]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
 								if errNivel == nil {
 									resultadoAux = append(resultadoAux, map[string]interface{}{
 										"Id":                inscripcionGet[0]["Id"],
@@ -1297,7 +1441,7 @@ func ConsultarPeriodo() (APIResponseDTO requestresponse.APIResponse) {
 	var periodoGet map[string]interface{}
 	var nivelGet map[string]interface{}
 
-	errPeriodo := request.GetJson("http://"+beego.AppConfig.String("ParametroService")+"periodo?query=Activo:true,CodigoAbreviacion:PA&sortby=Id&order=desc&limit=0", &periodoGet)
+	errPeriodo := request.GetJson(beego.AppConfig.String("ParametroService")+"periodo?query=Activo:true,CodigoAbreviacion:PA&sortby=Id&order=desc&limit=0", &periodoGet)
 	if errPeriodo == nil && fmt.Sprintf("%v", periodoGet["Data"]) != "[map[]]" {
 		if periodoGet["Status"] != "404" {
 			resultado = map[string]interface{}{
@@ -1306,14 +1450,14 @@ func ConsultarPeriodo() (APIResponseDTO requestresponse.APIResponse) {
 
 			var id_periodo = fmt.Sprintf("%v", periodoGet["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 
-			errCalendario := request.GetJson("http://"+beego.AppConfig.String("EventoService")+"calendario?query=Activo:true,PeriodoId:"+id_periodo+"&limit:0", &calendarioGet)
+			errCalendario := request.GetJson(beego.AppConfig.String("EventoService")+"calendario?query=Activo:true,PeriodoId:"+id_periodo+"&limit:0", &calendarioGet)
 			if errCalendario == nil {
 				if calendarioGet != nil {
 					var calendarios []map[string]interface{}
 
 					for _, calendarioAux := range calendarioGet {
 
-						errNivel := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", calendarioAux["Nivel"]), &nivelGet)
+						errNivel := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", calendarioAux["Nivel"]), &nivelGet)
 						if errNivel == nil {
 							calendario := map[string]interface{}{
 								"Id":            calendarioAux["Id"],
@@ -1360,76 +1504,131 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 	var jsondata map[string]interface{}
 	var tipoRes []map[string]interface{}
 	var identificacion []map[string]interface{}
-	var codigos []map[string]interface{}
+	var datosEstudiante []models.DatosIdentificacion
+	var codigos []string
+	var datosEstudianteXML models.DatosEstudianteResponse
+	var datosEstidianteJBMP []models.DatosEstudianteOracle
 	var codigosRes []map[string]interface{}
 	var proyectoGet []map[string]interface{}
 	var proyectos []map[string]interface{}
+	var proyectoXML models.ProyectosResponse
+	var proyectosJBPM []models.DatosProyectoOracle
 
-	errCalendario := request.GetJson("http://"+beego.AppConfig.String("EventoService")+"calendario/"+idCalendario, &calendario)
+	errCalendario := request.GetJson(beego.AppConfig.String("EventoService")+"calendario/"+idCalendario, &calendario)
 	if errCalendario == nil {
 		if calendario != nil {
 			if err := json.Unmarshal([]byte(calendario["DependenciaId"].(string)), &jsondata); err == nil {
 				calendario["DependenciaId"] = jsondata["proyectos"]
 			}
 
-			errTipoInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"tipo_inscripcion?query=NivelId:"+fmt.Sprintf("%v", calendario["Nivel"]), &tipoInscripcion)
+			errTipoInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"tipo_inscripcion?query=Activo:True,NivelId:"+fmt.Sprintf("%v", calendario["Nivel"]), &tipoInscripcion)
 			if errTipoInscripcion == nil {
 				if tipoInscripcion != nil {
 
 					for _, tipo := range tipoInscripcion {
-						if tipo["CodigoAbreviacion"] == "TRANSINT" || tipo["CodigoAbreviacion"] == "TRANSEXT" || tipo["CodigoAbreviacion"] == "REING" {
+						if /*tipo["CodigoAbreviacion"] == "TRANSINT" || tipo["CodigoAbreviacion"] == "TRANSEXT" ||*/ tipo["CodigoAbreviacion"] == "REING" {
 							tipoRes = append(tipoRes, tipo)
 						}
 					}
 
 					resultado = map[string]interface{}{"TipoInscripcion": tipoRes}
 
-					errIdentificacion := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+idPersona+"&sortby=Id&order=desc&limit=0", &identificacion)
+					errIdentificacion := request.GetJson(beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+idPersona+"&sortby=Id&order=desc&limit=0", &identificacion)
 					if errIdentificacion == nil && fmt.Sprintf("%v", identificacion[0]) != "map[]" {
 						if identificacion[0]["Status"] != 404 {
 
-							errCodigoEst := request.GetJson("http://"+beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?query=TerceroId.Id:"+
-								fmt.Sprintf("%v", idPersona)+",InfoComplementariaId.Id:93&limit=0", &codigos)
-							if errCodigoEst == nil && fmt.Sprintf("%v", codigos[0]) != "map[]" {
+							errCodigoEst := request.GetJson(beego.AppConfig.String("TercerosService")+"datos_identificacion?query=Activo:true,TerceroId.Id:"+
+								fmt.Sprintf("%v", idPersona)+",TipoDocumentoId.CodigoAbreviacion:CODE&limit=0", &datosEstudiante)
+							if errCodigoEst == nil && fmt.Sprintf("%v", datosEstudiante[0]) != "map[]" {
+
+								for _, dato := range datosEstudiante {
+									codigos = append(codigos, dato.Numero)
+								}
 
 								for _, codigo := range codigos {
-									errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=Codigo:"+codigo["Dato"].(string)[5:8], &proyectoGet)
-									if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
-										for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
-											if proyectoGet[0]["Id"] == proyectoCalendario {
+									errCodigoEstJBPM := request.GetJsonWSO2(beego.AppConfig.String("AcademicaEspacioAcademicoService")+"datos_estudiante/"+fmt.Sprint(codigo), &datosEstudianteXML)
 
-												codigo["Nombre"] = codigo["Dato"].(string) + " Proyecto: " + codigo["Dato"].(string)[5:8] + " - " + proyectoGet[0]["Nombre"].(string)
-												codigo["IdProyecto"] = proyectoGet[0]["Id"]
+									if errCodigoEstJBPM == nil && len(datosEstudianteXML.EstudianteCollection.DatosEstudiante) > 0 {
+										datosEstidianteJBMP = append(datosEstidianteJBMP, datosEstudianteXML.EstudianteCollection.DatosEstudiante[0])
+									}
+								}
 
-												codigosRes = append(codigosRes, codigo)
-											}
+								for _, codJBPM := range datosEstidianteJBMP {
+									existe := false
+									for _, codigo := range codigosRes {
+										if codigo["IdProyectoCondor"] == codJBPM.Carrera && codigo["Codigo"] == codJBPM.Codigo {
+											existe = true
+											break
 										}
+									}
+									if !existe {
+										codigoAux := map[string]interface{}{
+											"IdProyectoCondor": codJBPM.Carrera,
+											"Codigo":           codJBPM.Codigo,
+										}
+										codigosRes = append(codigosRes, codigoAux)
 									}
 								}
 							}
 
-							errProyecto := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",Activo:true&limit=0", &proyectoGet)
-							if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
-								if calendario["DependenciaId"] != nil {
-									for _, proyectoAux := range proyectoGet {
-										for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
-											if proyectoAux["Id"] == proyectoCalendario {
-												proyecto := map[string]interface{}{
-													"Id":          proyectoAux["Id"],
-													"Nombre":      proyectoAux["Nombre"],
-													"Codigo":      proyectoAux["Codigo"],
-													"CodigoSnies": proyectoAux["CodigoSnies"],
+							// errProyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=NivelFormacionId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",NivelFormacionId.NivelFormacionPadreId.Id:"+fmt.Sprintf("%v", calendario["Nivel"])+",Activo:true&limit=0", &proyectoGet)
+
+							if calendario["DependenciaId"] != nil {
+								if len(codigosRes) > 0 {
+
+									errProyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"proyecto_academico_institucion?query=Activo:true&limit=0", &proyectoGet)
+
+									if errProyecto == nil && fmt.Sprintf("%v", proyectoGet[0]) != "map[]" {
+
+										// buscar proyectos con los que se tiene relación según el código de estudiante y ACEST
+										for _, codEst := range codigosRes {
+											errProyectos := request.GetJsonWSO2(beego.AppConfig.String("AcademicaEspacioAcademicoService")+"proyectos_snies/"+fmt.Sprint(codEst["IdProyectoCondor"]), &proyectoXML)
+
+											// si existe contenido en la respuesta hay al menos un proyecto valido
+											if errProyectos == nil && len(proyectoXML.Proyectos.Proyecto) > 0 {
+												// almacenar cada proyecto para comparar códigos SNIES
+												proyectosJBPM = append(proyectosJBPM, proyectoXML.Proyectos.Proyecto...)
+
+											} else if errProyectos != nil {
+												logs.Error("Error getting carrera ID %v. Error :%v", codEst["IdProyectoCondor"], errProyectos)
+											}
+											if len(proyectoXML.Proyectos.Proyecto) == 0 {
+												fmt.Printf("No projects retrieved with code: %v", codEst["IdProyectoCondor"])
+											}
+										}
+
+										// buscar por codigo SNIES de JBPM
+										for _, proyect := range proyectosJBPM {
+											for _, proyectoAux := range proyectoGet {
+												// si coincide, buscar por proyectos activos
+												if proyectoAux["CodigoSnies"] == proyect.ASCraCodSnies {
+													for _, proyectoCalendario := range calendario["DependenciaId"].([]interface{}) {
+
+														if proyectoAux["Id"] == proyectoCalendario {
+															proyecto := map[string]interface{}{
+																"Id":          proyectoAux["Id"],
+																"Nombre":      proyectoAux["Nombre"],
+																"Codigo":      proyectoAux["Codigo"],
+																"CodigoSnies": proyectoAux["CodigoSnies"],
+															}
+
+															proyectos = append(proyectos, proyecto)
+														}
+													}
 												}
 
-												proyectos = append(proyectos, proyecto)
 											}
 										}
 									}
 								} else {
-									logs.Error(calendario)
-									APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran proyectos")
+									logs.Error(codigosRes)
+									APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran codigos del estudiante")
 									return APIResponseDTO
 								}
+							} else {
+								logs.Error(calendario)
+								APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, "No se encuentran proyectos")
+								return APIResponseDTO
 							}
 
 							resultado["CodigoEstudiante"] = codigosRes
@@ -1452,7 +1651,7 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 						return APIResponseDTO
 					}
 
-					if codigosRes == nil {
+					if len(codigosRes) == 0 {
 						i := 0
 						for i < len(tipoRes) {
 							if tipoRes[i]["CodigoAbreviacion"] != "TRANSEXT" {
@@ -1465,6 +1664,8 @@ func ConsultarParametros(idCalendario string, idPersona string) (APIResponseDTO 
 						for i := 0; i < len(tipoRes); i++ {
 							if tipoRes[i]["CodigoAbreviacion"] == "TRANSEXT" {
 								tipoRes = append(tipoRes[:i], tipoRes[i+1:]...)
+							} else {
+								i++
 							}
 						}
 					}
@@ -1514,7 +1715,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 
 	//Se consultan todas las inscripciones relacionadas a ese tercero
 	// Tranferencia interna
-	errInscripcion := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSINT&limit=0", &InternaGet)
+	errInscripcion := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSINT&limit=0", &InternaGet)
 	if errInscripcion == nil {
 		if InternaGet != nil && fmt.Sprintf("%v", InternaGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, InternaGet...)
@@ -1522,7 +1723,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	}
 
 	// Tranferencia externa
-	errExterna := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSEXT&limit=0", &ExternaGet)
+	errExterna := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:TRANSEXT&limit=0", &ExternaGet)
 	if errExterna == nil {
 		if ExternaGet != nil && fmt.Sprintf("%v", ExternaGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, ExternaGet...)
@@ -1530,7 +1731,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	}
 
 	// Reingreso
-	errReingreso := request.GetJson("http://"+beego.AppConfig.String("InscripcionService")+"inscripcion?query=PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:REING&limit=0", &reingresoGet)
+	errReingreso := request.GetJson(beego.AppConfig.String("InscripcionService")+"inscripcion?query=Activo:True,PersonaId:"+idPersona+",TipoInscripcionId.CodigoAbreviacion:REING&limit=0", &reingresoGet)
 	if errReingreso == nil {
 		if reingresoGet != nil && fmt.Sprintf("%v", reingresoGet[0]) != "map[]" {
 			Inscripciones = append(Inscripciones, reingresoGet...)
@@ -1541,7 +1742,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	resultadoAux = make([]map[string]interface{}, len(Inscripciones))
 	for i := 0; i < len(Inscripciones); i++ {
 		ReciboInscripcion := fmt.Sprintf("%v", Inscripciones[i]["ReciboInscripcion"])
-		errRecibo := request.GetJsonWSO2("http://"+beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
+		errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
 		if errRecibo == nil {
 			if ReciboXML != nil && fmt.Sprintf("%v", ReciboXML) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", ReciboXML) != "map[]" {
 				//Fecha límite de pago extraordinario
@@ -1565,7 +1766,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 					}
 				}
 
-				errNivel := request.GetJson("http://"+beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
+				errNivel := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"nivel_formacion/"+fmt.Sprintf("%v", Inscripciones[i]["TipoInscripcionId"].(map[string]interface{})["NivelId"]), &nivelGet)
 				if errNivel == nil {
 
 					resultadoAux[i] = map[string]interface{}{
@@ -1576,7 +1777,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 						"Recibo":            ReciboInscripcion,
 						"FechaGeneracion":   Inscripciones[i]["FechaCreacion"],
 						"EstadoRecibo":      Estado,
-						"EstadoInscripcion": Inscripciones[i]["EstadoInscripcionId"].(map[string]interface{})["Nombre"],
+						"EstadoInscripcion": Inscripciones[i]["EstadoInscripcionId"],
 						"NivelNombre":       nivelGet["Nombre"],
 						"Nivel":             nivelGet["Id"],
 						"SolicitudId":       nil,
@@ -1605,11 +1806,11 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 		}
 	}
 
-	errTipoSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+	errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 	if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 		var id = fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 
-		errSolicitud := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"solicitante?query=TerceroId:"+idPersona+",SolicitudId.EstadoTipoSolicitudId.TipoSolicitud.Id:"+id, &Solicitudes)
+		errSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"solicitante?query=TerceroId:"+idPersona+",SolicitudId.EstadoTipoSolicitudId.TipoSolicitud.Id:"+id, &Solicitudes)
 		if errSolicitud == nil {
 			if fmt.Sprintf("%v", Solicitudes) != "[map[]]" {
 
@@ -1626,7 +1827,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 								estadoId := solicitud["SolicitudId"].(map[string]interface{})["EstadoTipoSolicitudId"].(map[string]interface{})["EstadoId"].(map[string]interface{})["Id"]
 								var estado map[string]interface{}
 
-								errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado/"+fmt.Sprintf("%v", estadoId), &estado)
+								errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado/"+fmt.Sprintf("%v", estadoId), &estado)
 								if errEstado == nil {
 									resultadoAux[i]["EstadoSolicitud"] = estado["Data"].(map[string]interface{})["Nombre"]
 								}
@@ -1663,7 +1864,7 @@ func EstadosGet() (APIResponseDTO requestresponse.APIResponse) {
 	var estadoGet map[string]interface{}
 	var resultado []map[string]interface{}
 
-	errEstado := request.GetJson("http://"+beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=TipoSolicitud.Id:25,Activo:true&limit=0", &estadoGet)
+	errEstado := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"estado_tipo_solicitud?query=TipoSolicitud.Id:25,Activo:true&limit=0", &estadoGet)
 	if errEstado == nil && estadoGet["Status"] == "200" {
 		if fmt.Sprintf("%v", estadoGet["Data"].([]interface{})[0]) != "map[]" {
 			for _, estado := range estadoGet["Data"].([]interface{}) {
