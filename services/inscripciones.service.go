@@ -594,7 +594,7 @@ func InfoComplementariaTercero(data []byte) (APIResponseDTO requestresponse.APIR
 		APIResponseDTO = requestresponse.APIResponseDTO(true, 200, respuestas, nil)
 	} else {
 		for _, disable := range inactivePosts {
-			helpers.SetInactivo("http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
+			helpers.SetInactivo(beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
 		}
 	}
 	return APIResponseDTO
@@ -881,7 +881,7 @@ func ActualizarInfoContact(data []byte) (APIResponseDTO requestresponse.APIRespo
 			request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/"+fmt.Sprintf("%.f", revert["Id"].(float64)), "PUT", &resp, revert)
 		}
 		for _, disable := range inactivePosts {
-			helpers.SetInactivo("http://" + beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
+			helpers.SetInactivo(beego.AppConfig.String("TercerosService") + "info_complementaria_tercero/" + fmt.Sprintf("%.f", disable["Id"].(float64)))
 		}
 		return APIResponseDTO
 	}
@@ -896,7 +896,6 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 	var Valor map[string]interface{}
 	var NuevoRecibo map[string]interface{}
 	var inscripcionRealizada map[string]interface{}
-	var contadorRecibos int
 
 	if err := json.Unmarshal(data, &SolicitudInscripcion); err == nil {
 		objTransaccion := map[string]interface{}{
@@ -975,61 +974,75 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 
 		if err == "" {
 			if inscripciones, ok := recibosResultado["Inscripciones"]; ok {
+				reciboVencido = false
+				tieneRegistro := false
 				// Convertir la variable de tipo interface{} a un slice de mapas
 				inscripcionesMap, ok := inscripciones.([]map[string]interface{})
-				if len(inscripcionesMap) > 0 && ok {
-					for i := 0; i < len(inscripcionesMap); i++ {
+				if ok {
+					for i := range inscripcionesMap {
+						// ignorar map[]
+						if len(inscripcionesMap[i]) == 0 {
+							continue
+						}
+
 						if inscripcionesMap[i]["ProgramaAcademicoId"] != nil {
 							id_programa_inscripciones := fmt.Sprintf("%d", int(inscripcionesMap[i]["ProgramaAcademicoId"].(float64)))
-							estado_recibo_inscripciones := inscripcionesMap[i]["Estado"].(string)
+							// si existe un registro anterior
 							if id_programa_inscripciones == id_programa_academico {
+								tieneRegistro = true
+								estado_recibo_inscripciones := inscripcionesMap[i]["Estado"].(string)
+
 								if estado_recibo_inscripciones == "Vencido" {
 									reciboVencido = true
-								} else {
-									reciboVencido = false
 								}
-							} else {
-								contadorRecibos++
 							}
 						}
 					}
-					if contadorRecibos == len(inscripcionesMap) {
-						reciboVencido = true
-					}
+				}
+				// reciboVencido = (existe vencido) OR (no existe registro)
+				if !tieneRegistro {
+					reciboVencido = true
 				}
 
 			}
 
 			coincideCodigoSnies := false
-			var proyectos []map[string]interface{}
-			idProyecto := fmt.Sprintf("%.0f", SolicitudInscripcion["ProgramaAcademicoId"].(float64))
-			errproyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"/tr_proyecto_academico/"+idProyecto, &proyectos)
-			if errproyecto == nil {
-				proyecto := proyectos[0]
-				proyectoAcademico := proyecto["ProyectoAcademico"].(map[string]interface{})
-				codigoSnies := proyectoAcademico["CodigoSnies"].(string)
 
-				var HomologacionXML map[string]interface{}
-				codigoProyecto := proyectoAcademico["Codigo"].(string)
-				errHomologacion := request.GetJsonWSO2(beego.AppConfig.String("HomologacionDependenciaService")+"proyecto_acad_snies/"+codigoSnies, &HomologacionXML)
-				resultadoHomologacion := HomologacionXML["proyecto_snies"].(map[string]interface{})
-				if errHomologacion == nil && fmt.Sprintf("%v", resultadoHomologacion) != "map[]" {
-					proyectosSnies := resultadoHomologacion["proyectos"].([]interface{})
+			// fmt.Println("----recibo vencido-----------------------------------")
+			// fmt.Println(reciboVencido)
+			// fmt.Println("----recibos resultado-----------------------------------")
+			// fmt.Println(recibosResultado)
+			//Verificar si existe un recibo vencido o es la primera vez que inscribe el postgrado
+			// reciboVencido = (existe vencido) OR (no existe registro)
+			if reciboVencido {
 
-					for _, proyectoSnies := range proyectosSnies {
-						proyectoSnies := proyectoSnies.(map[string]interface{})
-						codigoProyectoHomologacion := fmt.Sprintf("%.0f", proyectoSnies["codigo_proyecto"].(float64))
-						coincideCodigoSnies = codigoProyectoHomologacion == codigoProyecto
+				var proyectos []map[string]interface{}
+				idProyecto := fmt.Sprintf("%.0f", SolicitudInscripcion["ProgramaAcademicoId"].(float64))
+				errproyecto := request.GetJson(beego.AppConfig.String("ProyectoAcademicoService")+"/tr_proyecto_academico/"+idProyecto, &proyectos)
+				if errproyecto == nil {
+					proyecto := proyectos[0]
+					proyectoAcademico := proyecto["ProyectoAcademico"].(map[string]interface{})
+					codigoSnies := proyectoAcademico["CodigoSnies"].(string)
 
-						if coincideCodigoSnies {
-							break
+					var HomologacionXML map[string]interface{}
+					codigoProyecto := proyectoAcademico["Codigo"].(string)
+					errHomologacion := request.GetJsonWSO2(beego.AppConfig.String("HomologacionDependenciaService")+"proyecto_acad_snies/"+codigoSnies, &HomologacionXML)
+					resultadoHomologacion := HomologacionXML["proyecto_snies"].(map[string]interface{})
+					if errHomologacion == nil && fmt.Sprintf("%v", resultadoHomologacion) != "map[]" {
+						proyectosSnies := resultadoHomologacion["proyectos"].([]interface{})
+
+						for _, proyectoSnies := range proyectosSnies {
+							proyectoSnies := proyectoSnies.(map[string]interface{})
+							codigoProyectoHomologacion := fmt.Sprintf("%.0f", proyectoSnies["codigo_proyecto"].(float64))
+							coincideCodigoSnies = codigoProyectoHomologacion == codigoProyecto
+
+							if coincideCodigoSnies {
+								break
+							}
 						}
 					}
 				}
-			}
 
-			//Verificar si existe un recibo vencido o es la primera vez que inscribe el postgrado
-			if reciboVencido || fmt.Sprintf("%v", recibosResultado) == "map[]" {
 				if coincideCodigoSnies {
 					errInscripcion := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion", "POST", &inscripcionRealizada, inscripcion)
 					if errInscripcion == nil || inscripcionRealizada != nil && inscripcionRealizada["Status"] != "400" {
@@ -1056,7 +1069,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 
 								SolicitudRecibo["proyecto"] = SolicitudInscripcion["ProgramaAcademicoCodigo"]
 
-								reciboSolicitud := httplib.Post("http://" + beego.AppConfig.String("GenerarReciboJbpmService") + "recibos_pago_proxy")
+								reciboSolicitud := httplib.Post(beego.AppConfig.String("GenerarReciboJbpmService") + "recibos_pago_proxy")
 								reciboSolicitud.Header("Accept", "application/json")
 								reciboSolicitud.Header("Content-Type", "application/json")
 								reciboSolicitud.JSONBody(SolicitudRecibo)
@@ -1064,7 +1077,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 								// fmt.Println("Solicitud_recibo: ")
 								// fmt.Println(SolicitudRecibo)
 								// errRecibo2 := request.SendJson(beego.AppConfig.String("GenerarReciboJbpmService")+"recibosPagoProxy", "POST", &NuevoRecibo, SolicitudRecibo)
-								// fmt.Println("http://" + beego.AppConfig.String("GenerarReciboJbpmService") + "recibosPagoProxy")
+								// fmt.Println(beego.AppConfig.String("GenerarReciboJbpmService") + "recibosPagoProxy")
 
 								if errRecibo := reciboSolicitud.ToJSON(&NuevoRecibo); errRecibo == nil {
 									// fmt.Println("Respuesta de JBPM")
