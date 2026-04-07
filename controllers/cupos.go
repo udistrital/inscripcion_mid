@@ -1,8 +1,6 @@
 package controllers
 
 import (
-	"fmt"
-
 	"github.com/astaxie/beego"
 	"github.com/udistrital/inscripcion_mid/services"
 	"github.com/udistrital/utils_oas/errorhandler"
@@ -45,7 +43,7 @@ func (c *CuposController) Post() {
 // @Failure 403 body is empty
 // @router /comentarios [post]
 func (c *CuposController) PostDocs() {
-	fmt.Println("postComentarios")
+
 	defer errorhandler.HandlePanic(&c.Controller)
 	data := c.Ctx.Input.RequestBody
 	respuesta := services.PostDocCupos(data)
@@ -119,7 +117,7 @@ func (c *CuposController) GetAllDocs() {
 // @Failure 403 :id is not int
 // @router /:id [put]
 func (c *CuposController) Put() {
-	fmt.Println("Put")
+
 	defer errorhandler.HandlePanic(&c.Controller)
 	data := c.Ctx.Input.RequestBody
 	respuesta := services.UpdateCuposInscripcion(data)

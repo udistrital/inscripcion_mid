@@ -49,7 +49,7 @@ func InformacionFamiliar(data []byte) (APIResponseDTO requestresponse.APIRespons
 
 		for _, terceroAux := range InfoFamiliarAux {
 			//Se añade primero el familiar a la tabla de terceros
-			//fmt.Println(terceroAux)
+
 			TerceroFamiliarAux := terceroAux.(map[string]interface{})["Familiar"].(map[string]interface{})["TerceroFamiliarId"]
 
 			TerceroFamiliar := map[string]interface{}{
@@ -147,7 +147,7 @@ func Reintegro(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoReintegro)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Reintegrro registrado")
+
 			APIResponseDTO = requestresponse.APIResponseDTO(true, 200, Reintegro, nil)
 		}
 	} else {
@@ -168,7 +168,7 @@ func TransferenciaPost(data []byte) (APIResponseDTO requestresponse.APIResponse)
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoTransferencia)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Transferencia registrada")
+
 			APIResponseDTO = requestresponse.APIResponseDTO(true, 200, Transferencia, nil)
 		}
 	} else {
@@ -200,8 +200,7 @@ func InfoIcfesColegio(data []byte) (APIResponseDTO requestresponse.APIResponse) 
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoInfoComeplementaria)
 				return APIResponseDTO
 			} else {
-				fmt.Println("Info complementaria registrada", dato["InfoComplementariaId"])
-				// alertas = append(alertas, Transferencia)
+
 			}
 		}
 
@@ -211,7 +210,7 @@ func InfoIcfesColegio(data []byte) (APIResponseDTO requestresponse.APIResponse) 
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoInscripcionPregrado)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Inscripcion registrada")
+
 			resultado = append(resultado, InfoIcfesColegio)
 		}
 
@@ -234,7 +233,7 @@ func InfoIcfesColegio(data []byte) (APIResponseDTO requestresponse.APIResponse) 
 		errRegistroColegio := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/", "POST", &resultadoRegistroColegio, ColegioRegistro)
 		if errRegistroColegio == nil && fmt.Sprintf("%v", resultadoRegistroColegio["System"]) != "map[]" && resultadoRegistroColegio["Id"] != nil {
 			if resultadoRegistroColegio["Status"] != 400 {
-				fmt.Println("Colegio registrado")
+
 				resultado = append(resultado, InfoIcfesColegio)
 			} else {
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoRegistroColegio)
@@ -270,7 +269,7 @@ func PreinscripcionPost(data []byte) (APIResponseDTO requestresponse.APIResponse
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoPreinscripcion)
 				return APIResponseDTO
 			} else {
-				fmt.Println("Preinscripcion registrada", dato)
+
 				APIResponseDTO = requestresponse.APIResponseDTO(true, 200, InfoPreinscripcionTodas, nil)
 			}
 		}
@@ -303,10 +302,10 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoRegistroColegio)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Colegio registrado")
+
 			resultado = append(resultado, resultadoRegistroColegio)
 			IdColegio = resultadoRegistroColegio["Id"].(float64)
-			fmt.Println(IdColegio)
+
 		}
 		DireccionColegioPost := map[string]interface{}{
 			"TerceroId":            map[string]interface{}{"Id": IdColegio},
@@ -321,7 +320,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoDirecionColegio)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Direccion Colegio registrado")
+
 			resultado = append(resultado, resultadoDirecionColegio)
 		}
 		UbicacionColegioPost := map[string]interface{}{
@@ -336,7 +335,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoUbicacionColegio)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Ubicacion Colegio registrado")
+
 			resultado = append(resultado, resultadoUbicacionColegio)
 
 		}
@@ -352,7 +351,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoTipoColegio)
 			return APIResponseDTO
 		} else {
-			fmt.Println("TipoColegio registrado")
+
 			resultado = append(resultado, resultadoTipoColegio)
 
 		}
@@ -369,7 +368,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoVerificarColegio)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Verificar registrado")
+
 			resultado = append(resultado, resultadoVerificarColegio)
 		}
 		// Registro de colegio a tercero
@@ -393,7 +392,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 		errRegistroColegioTercero := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/", "POST", &resultadoRegistroColegioTercero, ColegioRegistro)
 		if errRegistroColegioTercero == nil && fmt.Sprintf("%v", resultadoRegistroColegioTercero["System"]) != "map[]" && resultadoRegistroColegioTercero["Id"] != nil {
 			if resultadoRegistroColegioTercero["Status"] != 400 {
-				fmt.Println("Colegio Tercero registrado")
+
 				resultado = append(resultado, InfoIcfesColegio)
 			} else {
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoRegistroColegioTercero)
@@ -411,7 +410,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoInfoComeplementaria)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Info complementaria registrada", InfoComplementariaTercero)
+
 			// alertas = append(alertas, Transferencia)
 		}
 
@@ -421,7 +420,7 @@ func InfoNuevoColegioIcfes(data []byte) (APIResponseDTO requestresponse.APIRespo
 			APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoInscripcionPregrado)
 			return APIResponseDTO
 		} else {
-			fmt.Println("Inscripcion registrada")
+
 			resultado = append(resultado, InfoIcfesColegio)
 		}
 
@@ -455,7 +454,7 @@ func PutInfoComplementaria(data []byte) (APIResponseDTO requestresponse.APIRespo
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, resultadoInfoComeplementaria)
 				return APIResponseDTO
 			} else {
-				fmt.Println("Info complementaria registrada", dato["InfoComplementariaId"])
+
 				//APIResponseDTO = requestresponse.APIResponseDTO(true, 200, transferencia ,nil)
 			}
 		}
@@ -494,7 +493,7 @@ func ConsultarEventos(idEvento string) (APIResponseDTO requestresponse.APIRespon
 						if erreproyectos == nil && fmt.Sprintf("%v", ProyectosAcademicosConEvento) != "map[]" {
 							if ProyectosAcademicosConEvento["Status"] != 404 {
 								periodoevento := EventosInscripcion["PeriodoId"]
-								fmt.Println(periodoevento)
+
 								ProyectosAcademicosConEvento["PeriodoId"] = map[string]interface{}{"Id": periodoevento}
 								Proyectos_academicos_Get = append(Proyectos_academicos_Get, ProyectosAcademicosConEvento)
 
@@ -948,7 +947,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 			id_periodo := int(SolicitudInscripcion["PeriodoId"].(float64))
 			credencial, err := helpers.GenerarCredencialInscripcionPregrado(float64(id_periodo))
 			if err != nil {
-				fmt.Println("Error al generar la credencial:", err)
+
 				return requestresponse.APIResponseDTO(false, 500, nil, "Error al generar la credencial de inscripción.")
 			}
 			inscripcion["Credencial"] = credencial
@@ -1008,10 +1007,6 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 
 			coincideCodigoSnies := false
 
-			// fmt.Println("----recibo vencido-----------------------------------")
-			// fmt.Println(reciboVencido)
-			// fmt.Println("----recibos resultado-----------------------------------")
-			// fmt.Println(recibosResultado)
 			//Verificar si existe un recibo vencido o es la primera vez que inscribe el postgrado
 			// reciboVencido = (existe vencido) OR (no existe registro)
 			if reciboVencido {
@@ -1074,14 +1069,10 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 								reciboSolicitud.Header("Content-Type", "application/json")
 								reciboSolicitud.JSONBody(SolicitudRecibo)
 
-								// fmt.Println("Solicitud_recibo: ")
-								// fmt.Println(SolicitudRecibo)
 								// errRecibo2 := request.SendJson(beego.AppConfig.String("GenerarReciboJbpmService")+"recibosPagoProxy", "POST", &NuevoRecibo, SolicitudRecibo)
-								// fmt.Println(beego.AppConfig.String("GenerarReciboJbpmService") + "recibosPagoProxy")
 
 								if errRecibo := reciboSolicitud.ToJSON(&NuevoRecibo); errRecibo == nil {
-									// fmt.Println("Respuesta de JBPM")
-									// fmt.Println(errRecibo)
+
 									inscripcionRealizada["ReciboInscripcion"] = fmt.Sprintf("%v/%v", NuevoRecibo["creaTransaccionResponse"].(map[string]interface{})["secuencia"], NuevoRecibo["creaTransaccionResponse"].(map[string]interface{})["anio"])
 									var inscripcionUpdate map[string]interface{}
 									errInscripcionUpdate := request.SendJson(fmt.Sprintf(beego.AppConfig.String("InscripcionService")+"inscripcion/%.f", inscripcionRealizada["Id"]), "PUT", &inscripcionUpdate, inscripcionRealizada)
@@ -1096,7 +1087,7 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 										// 	"nombre": SolicitudInscripcion["Nombre"].(string) + " " + SolicitudInscripcion["Apellido"].(string),
 										// 	"estado": "inscripción solicitada",
 										// }
-										// fmt.Println(dataEmail)
+
 										// utils.SendNotificationInscripcionSolicitud(dataEmail, objTransaccion["correo"].(string))
 									} else {
 										logs.Error(errInscripcionUpdate)

@@ -11,8 +11,6 @@ import (
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/k0kubun/pp"
 )
 
 // Funcion para solicitar descuentos academicos
@@ -48,7 +46,6 @@ func SolicitarDescuentoAcademico(data []byte) (APIResponseDTO requestresponse.AP
 				"DescuentosDependenciaId": tipoDescuento[0],
 			}
 			formatdata.JsonPrint(solicituddescuento)
-			// fmt.Println(solicituddescuento)
 
 			errSolicitud := request.SendJson(beego.AppConfig.String("DescuentoAcademicoService")+"solicitud_descuento", "POST", &solicitudPost, solicituddescuento)
 			if errSolicitud == nil && fmt.Sprintf("%v", solicitudPost["System"]) != "map[]" && solicitudPost["Id"] != nil {
@@ -207,8 +204,7 @@ func GetDescuentoAcademicoById(idTercero string, idSolicitud string) (APIRespons
 
 							if errSoporte == nil && fmt.Sprintf("%v", soporte[0]["System"]) != "map[]" {
 								if soporte[0]["Status"] != 404 {
-									pp.Println("$$$$$$$$$$$$$$$$$$$$$$$$$")
-									//fmt.Println("el resultado de los documentos es: ", resultado4)
+
 									resultado["DocumentoId"] = soporte[0]["DocumentoId"]
 									validData = append(validData, resultado)
 									APIResponseDTO = requestresponse.APIResponseDTO(true, 200, validData)
@@ -303,7 +299,7 @@ func GetDescuentoByDpendencia(idDependencia string) (APIResponseDTO requestrespo
 			for _, solici := range solicitud {
 				solici := solici
 				wge.Go(func() error {
-					fmt.Println("Entra hilo")
+
 					var tipoDescuento map[string]interface{}
 					errDescuento := request.GetJson(beego.AppConfig.String("DescuentoAcademicoService")+"tipo_descuento/"+fmt.Sprintf("%v", solici["TipoDescuentoId"].(map[string]interface{})["Id"]), &tipoDescuento)
 					if errDescuento == nil && fmt.Sprintf("%v", tipoDescuento["System"]) != "map[]" {
@@ -368,7 +364,7 @@ func GetDescuentoAcademicoByTercero(idTercero string) (APIResponseDTO requestres
 								errSoporte := request.GetJson(beego.AppConfig.String("DescuentoAcademicoService")+"soporte_descuento/?query=SolicitudDescuentoId:"+fmt.Sprintf("%v", solicitud[u]["Id"])+"&fields=DocumentoId", &soporte)
 								if errSoporte == nil && fmt.Sprintf("%v", soporte[0]["System"]) != "map[]" {
 									if soporte[0]["Status"] != 404 {
-										//fmt.Println("el resultado de los documentos es: ", resultado4)
+
 										solicitud[u]["DocumentoId"] = soporte[0]["DocumentoId"]
 									} else {
 										if soporte[0]["Message"] == "Not found resource" {
@@ -474,7 +470,7 @@ func GetDescuentoByTerceroPeriodoDependencia(idTercero string, idPeriodo string,
 								errSoporte := request.GetJson(beego.AppConfig.String("DescuentoAcademicoService")+"soporte_descuento/?query=Activo:true,SolicitudDescuentoId:"+fmt.Sprintf("%v", solicitud[u]["Id"])+"&fields=DocumentoId", &soporte)
 								if errSoporte == nil && fmt.Sprintf("%v", soporte[0]["System"]) != "map[]" {
 									if soporte[0]["Status"] != 404 {
-										//fmt.Println("el resultado de los documentos es: ", resultado4)
+
 										solicitud[u]["DocumentoId"] = soporte[0]["DocumentoId"]
 									}
 								} else {

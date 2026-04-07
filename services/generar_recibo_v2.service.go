@@ -23,8 +23,6 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 	var data map[string]interface{}
 	//First we fetch the data
 
-	fmt.Println(data)
-
 	if parseErr := json.Unmarshal(dataRecibo, &data); parseErr == nil {
 
 		tipoRecibo := data["Tipo"].(string)
@@ -38,14 +36,11 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 				if ReciboInscripcion != "0/<nil>" {
 					errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/"+ReciboInscripcion, &ReciboXML)
 					//errRecibo := request.GetJsonWSO2(beego.AppConfig.String("ConsultarReciboJbpmService")+"consulta_recibo/8702/2021", &ReciboXML)
-					// fmt.Println("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-					// fmt.Println(ReciboXML)
-					// fmt.Println("http://" + beego.AppConfig.String("ConsultarReciboJbpmService") + "consulta_recibo/8702/2021")
+
 					if errRecibo == nil {
 						if ReciboXML != nil && fmt.Sprintf("%v", ReciboXML) != "map[reciboCollection:map[]]" && fmt.Sprintf("%v", ReciboXML) != "map[]" {
 
 							data["Valor"] = ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["valor_extraordinario"].(string)
-							//fmt.Println(ReciboXML)
 
 							if fecha, exist := ReciboXML["reciboCollection"].(map[string]interface{})["recibo"].([]interface{})[0].(map[string]interface{})["fecha_pagado"].(string); exist {
 								if fecha != "" {
@@ -71,7 +66,7 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 								logs.Error("Failed creating PDF voucher: %s\n", pdf.Error())
 								APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, pdf.Error())
 							}
-							//fmt.Println(data)
+
 							if pdf.Ok() {
 								encodedFile := encodePDF(pdf)
 								APIResponseDTO = requestresponse.APIResponseDTO(true, 200, encodedFile, nil)
@@ -83,7 +78,7 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 									"nombre":  data["Nombre"].(string),
 									"periodo": data["Periodo"].(string),
 								}
-								fmt.Println("data object", dataEmail)
+
 								//utils.SendNotificationInscripcionSolicitud(dataEmail, objTransaccion["correo"].(string))
 								attachments := []map[string]interface{}{}
 								attachments = append(attachments, map[string]interface{}{
@@ -115,7 +110,7 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, parseErr.Error())
 				return APIResponseDTO
 			}
-			fmt.Println("Inscripción")
+
 		case "Aspirante":
 			if parseErr := json.Unmarshal(dataRecibo, &data); parseErr == nil {
 
@@ -136,9 +131,9 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, parseErr.Error())
 				return APIResponseDTO
 			}
-			fmt.Println("Admitido")
+
 		case "Estudiante":
-			fmt.Println("Estudiante")
+
 			if parseErr := json.Unmarshal(dataRecibo, &data); parseErr == nil {
 				//Then we create a new PDF document and write the title and the current date.
 
@@ -161,7 +156,7 @@ func GenerarReciboV2(dataRecibo []byte) (APIResponseDTO requestresponse.APIRespo
 			}
 
 		default:
-			fmt.Println("La referencia de recibo es erronea")
+
 		}
 
 	} else {
@@ -1010,7 +1005,7 @@ func fontStyleV2(pdf *gofpdf.Fpdf, style string, size float64, bw int) {
 
 // Divide texto largo en lineas
 // func dividirTexto(pdf *gofpdf.Fpdf, text string, w float64) []string {
-// 	fmt.Println("Texto: ", text)
+
 // 	lineasraw := pdf.SplitLines([]byte(text), w)
 // 	var lineas []string
 // 	for _, lineraw := range lineasraw {

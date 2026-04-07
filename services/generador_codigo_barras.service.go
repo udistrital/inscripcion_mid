@@ -38,7 +38,7 @@ func GenerarCodigoBarras(data []byte) (APIResponseDTO requestresponse.APIRespons
 		//alertas = append(alertas, InformacionCodigo)
 
 		CodigoRecibido := InformacionCodigo["Prueba"].(string)
-		fmt.Println("Generando code128 barcode para : ", CodigoRecibido)
+
 		bcode, _ := code128.Encode(CodigoRecibido)
 
 		if err != nil {
@@ -55,8 +55,6 @@ func GenerarCodigoBarras(data []byte) (APIResponseDTO requestresponse.APIRespons
 
 		// encode the barcode as png
 		png.Encode(file, ScCode)
-
-		fmt.Println("Code128 code generated and saved to Codigo_generado.png")
 
 	} else {
 

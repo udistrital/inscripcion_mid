@@ -304,7 +304,7 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 	var DataMap []map[string]interface{}
 
 	endpoint := beego.AppConfig.String("TercerosService") + "info_complementaria_tercero?query=TerceroId__Id:" + fmt.Sprintf("%v", idTercero) + ",InfoComplementariaId__CodigoAbreviacion:EXP_LABORAL,Activo:true&limit=0&sortby=Id&order=asc"
-	fmt.Println(endpoint)
+
 	errData := request.GetJson(endpoint, &DataMap)
 	if errData != nil {
 		errorGetAll = true

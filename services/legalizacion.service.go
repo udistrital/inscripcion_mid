@@ -820,14 +820,13 @@ func ActualizarInfolegalizacionMatricula(data []byte) (APIResponseDTO requestres
 		}
 
 		for key, value := range idsInfoCompActualizar {
-			fmt.Println("Key:", key, "Value:", value)
 
 			if stringValue, ok := value.(string); ok {
 				if resInfoComp, errInfoComp := ObtenerInfoComplementariaActual(idTercero, stringValue, legalizacionMatriculaRequest, key); errInfoComp == nil {
-					fmt.Println("ENTRADA PRINCIPAL OK:", resInfoComp)
+
 					resultado = append(resultado, resInfoComp)
 				} else {
-					fmt.Println("ENTRADA PRINCIPAL MAL:", resInfoComp, errInfoComp)
+
 					errorGetAll = true
 					APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errInfoComp.Error())
 					return APIResponseDTO

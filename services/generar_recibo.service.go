@@ -181,7 +181,7 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 							"nombre":  data["ASPIRANTE"].(map[string]interface{})["nombre"].(string),
 							"periodo": data["INSCRIPCION"].(map[string]interface{})["periodo"].(string),
 						}
-						fmt.Println("data object", dataEmail)
+
 						//utils.SendNotificationInscripcionSolicitud(dataEmail, objTransaccion["correo"].(string))
 						attachments := []map[string]interface{}{}
 						attachments = append(attachments, map[string]interface{}{
@@ -1201,7 +1201,7 @@ func fontStyle(pdf *gofpdf.Fpdf, style string, size float64, bw int) {
 
 // Divide texto largo en lineas
 // func dividirTexto(pdf *gofpdf.Fpdf, text string, w float64) []string {
-// 	fmt.Println("Texto: ", text)
+
 // 	lineasraw := pdf.SplitLines([]byte(text), w)
 // 	var lineas []string
 // 	for _, lineraw := range lineasraw {
