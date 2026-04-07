@@ -451,7 +451,7 @@ func generateAlerts(SolicitudDocente map[string]interface{}, coincidences int, n
 						})
 					}
 				default:
-					fmt.Println("No entro a ninguno de los caso")
+
 				}
 			}
 			if !isAccumulatedPass {
@@ -573,8 +573,7 @@ func findGradePoints(SolicitudProduccion map[string]interface{}, idSubtipoInt in
 			}
 		}
 	}
-	fmt.Println(numMaestria)
-	fmt.Println(numEspecializacion)
+
 	if idSubtipoInt == 4 {
 		if numEspecializacion >= 2 {
 			//editar este valor a -1 para ajustar cuentas
@@ -824,9 +823,6 @@ func PostSolicitudDocente(SolicitudDocente map[string]interface{}) (result map[s
 		terceroID = SolicitudDocente["TerceroId"]
 	}
 
-	fmt.Println("TerceroID: ")
-	fmt.Println(terceroID)
-
 	var solicitudesEvolucionEstado []map[string]interface{}
 	solicitudesEvolucionEstado = append(solicitudesEvolucionEstado, map[string]interface{}{
 		"TerceroId":             terceroID,
@@ -840,8 +836,6 @@ func PostSolicitudDocente(SolicitudDocente map[string]interface{}) (result map[s
 
 	SolicitudDocentePost["EvolucionesEstado"] = solicitudesEvolucionEstado
 	SolicitudDocentePost["Observaciones"] = nil
-
-	fmt.Println("paso!")
 
 	var resultadoSolicitudDocente map[string]interface{}
 	errSolicitud := request.SendJson(beego.AppConfig.String("SolicitudDocenteService")+"/tr_solicitud", "POST", &resultadoSolicitudDocente, SolicitudDocentePost)
@@ -958,7 +952,7 @@ func CalcularFecha(EstadoTipoSolicitud map[string]interface{}) (result string) {
 
 	loc, err := time.LoadLocation("America/Bogota")
 	if err != nil {
-		fmt.Println(err)
+
 	}
 	tiempoBogota = tiempoBogota.In(loc)
 

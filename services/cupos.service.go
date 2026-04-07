@@ -84,7 +84,7 @@ func UpdateCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIResp
 	var date = time_bogota.TiempoBogotaFormato()
 
 	if err := json.Unmarshal(data, &cupoActualizado); err == nil {
-		fmt.Println("Put")
+
 		idcupo := cupoActualizado["Id"].(float64)
 		dataActualizada := map[string]interface{}{
 			"Activo":              cupoActualizado["Activo"],
@@ -111,7 +111,7 @@ func UpdateCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIResp
 	}
 }
 func GetAllDocCupos() (APIResponseDTO requestresponse.APIResponse) {
-	fmt.Println("GetAll")
+
 	var docCupo []map[string]interface{}
 
 	var listado []map[string]interface{}
@@ -133,7 +133,7 @@ func GetAllDocCupos() (APIResponseDTO requestresponse.APIResponse) {
 
 			var tipocupo map[string]interface{}
 			errtipocupo := request.GetJson(beego.AppConfig.String("ParametroService")+"/parametro?query=TipoParametroId__Id:87,Id:"+fmt.Sprintf("%v", idTipoCupo)+"&limit=0", &tipocupo)
-			//fmt.Println(ProyectoV2["Data"])
+
 			if errtipocupo == nil && tipocupo["Status"] == "200" && fmt.Sprintf("%v", tipocupo["Data"]) != "[map[]]" {
 				cupoContenido["Cupo"] = tipocupo["Data"].([]interface{})[0].(map[string]interface{})["Nombre"]
 			} else {
@@ -289,7 +289,7 @@ func PostCuposInscripcion(data []byte) (APIResponseDTO requestresponse.APIRespon
 								},
 							}
 							errDocumentoCupo := request.SendJson(beego.AppConfig.String("InscripcionService")+"/documento_cupo/", "POST", &respuesta, dataComentario)
-							fmt.Println(respuesta)
+
 							if errDocumentoCupo != nil {
 								errores = append(errores, errDocumentoCupo.Error())
 							}

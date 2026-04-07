@@ -10,8 +10,6 @@ import (
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"github.com/udistrital/utils_oas/time_bogota"
-
-	"github.com/k0kubun/pp"
 )
 
 func ProduccionAcademicaPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
@@ -91,7 +89,7 @@ func EstadoAutorProduccion(idAutor string, data []byte) (APIResponseDTO requestr
 	var dataPut map[string]interface{}
 
 	if err := json.Unmarshal(data, &dataPut); err == nil {
-		fmt.Println("data put", dataPut)
+
 		var acepta = dataPut["acepta"].(bool)
 		var AutorProduccionAcademica = dataPut["AutorProduccionAcademica"].(map[string]interface{})
 		if acepta {
@@ -101,7 +99,7 @@ func EstadoAutorProduccion(idAutor string, data []byte) (APIResponseDTO requestr
 		}
 		var resultadoAutor map[string]interface{}
 		errAutor := request.SendJson(beego.AppConfig.String("ProduccionAcademicaService")+"/autor_produccion_academica/"+idAutor, "PUT", &resultadoAutor, AutorProduccionAcademica)
-		pp.Println(resultadoAutor)
+
 		if errAutor == nil && fmt.Sprintf("%v", resultadoAutor["System"]) != "map[]" && resultadoAutor["Id"] != nil {
 			if resultadoAutor["Status"] != 400 {
 				resultado = AutorProduccionAcademica
@@ -200,7 +198,7 @@ func GetProduccionById(idProduccion string) (APIResponseDTO requestresponse.APIR
 }
 
 func GetAllProducciones() (APIResponseDTO requestresponse.APIResponse) {
-	fmt.Println("Consultando todas las producciones")
+
 	//resultado resultado final
 	var resultado []map[string]interface{}
 	//resultado experiencia

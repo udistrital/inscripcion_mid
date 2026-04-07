@@ -118,7 +118,7 @@ func SolicitudPost(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 			}
 
 		case "Reingreso":
-			// fmt.Println("///////  Entro a reingresos    ---------")
+
 			reingreso = map[string]interface{}{
 				"InscripcionId":    inscripcionId,
 				"CodigoEstudiante": SolicitudInscripcion["CodigoEstudiante"],
@@ -1179,11 +1179,9 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 								var solicitudJson map[string]interface{}
 								if err := json.Unmarshal([]byte(referencia), &solicitudJson); err == nil {
 
-									fmt.Println(solicitudJson["InscripcionId"], idInscripcion)
 									if fmt.Sprintf("%v", solicitudJson["InscripcionId"]) == fmt.Sprintf("%v", idInscripcion) {
 										var inscripcion map[string]interface{}
 										resultado["SolicitudId"] = fmt.Sprintf("%v", solicitud["SolicitudId"].(map[string]interface{})["Id"])
-										fmt.Println(solicitudJson["InscripcionId"], idInscripcion)
 
 										// Validación de reingresos y transferencias
 										if fmt.Sprintf("%t", solicitudJson["EsReingreso"]) == "true" {
