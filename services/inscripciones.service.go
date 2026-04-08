@@ -1003,6 +1003,8 @@ func GenerarInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse
 					reciboVencido = true
 				}
 
+			} else if len(recibosResultado) == 0 {
+				reciboVencido = true
 			}
 
 			coincideCodigoSnies := false
