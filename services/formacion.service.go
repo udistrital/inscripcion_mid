@@ -32,7 +32,11 @@ func CrearFormacion(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 		DescripcionTG := fmt.Sprintf("%q", FormacionAcademica["DescripcionTrabajoGrado"])
 		DocumentoId := fmt.Sprintf("%v", FormacionAcademica["DocumentoId"])
 		NitU := fmt.Sprintf("%q", FormacionAcademica["NitUniversidad"])
-		// NivelFormacion := fmt.Sprintf("%v", FormacionAcademica["NivelFormacion"])
+		// limpiar el nit
+		re := regexp.MustCompile("[^0-9-]")
+		idUniversidad := re.ReplaceAllString(NitU, "")
+		partes := strings.Split(idUniversidad, "-")
+		NitU = fmt.Sprintf("%s", partes[0])
 
 		// GET para traer el id de experencia_labora info complementaria
 		var resultadoInfoComplementaria []map[string]interface{}
@@ -68,7 +72,7 @@ func CrearFormacion(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 				"\"TituloTrabajoGrado\": " + TituloTG + ",    " +
 				"\"DesTrabajoGrado\": " + DescripcionTG + ",    " +
 				"\"DocumentoId\": " + DocumentoId + ",    " +
-				"\"NitUniversidad\": " + NitU +
+				"\"NitUniversidad\": \"" + NitU + "\"" +
 				// "\"NivelFormacion\": " + NivelFormacion + ", \n " +
 				"\n }",
 			"Activo": true,
