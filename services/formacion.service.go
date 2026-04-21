@@ -112,7 +112,7 @@ func GetUniversidadInfo(idUniversidad string) (APIResponseDTO requestresponse.AP
 	partes := strings.Split(idUniversidad, "-")
 	numeroNit := partes[0]
 
-	endpoit := "datos_identificacion?query=TipoDocumentoId__Id:7,Numero:" + numeroNit
+	endpoit := "datos_identificacion?query=TipoDocumentoId__Id:7,Activo:true,Numero:" + numeroNit
 
 	//GET que asocia el nit con la universidad
 	errNit := request.GetJson(beego.AppConfig.String("TercerosService")+endpoit, &universidad)
