@@ -11,6 +11,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
 	"golang.org/x/sync/errgroup"
@@ -155,7 +156,7 @@ func GetUniversidadInfo(idUniversidad string) (APIResponseDTO requestresponse.AP
 
 					//GET para traer la dirección de la universidad (info_complementaria 54)
 					var resultadoDireccion []map[string]interface{}
-					errDireccion := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:54,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoDireccion)
+					errDireccion := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:DIRECCIÓN,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoDireccion)
 					if errDireccion == nil && fmt.Sprintf("%v", resultadoDireccion[0]["System"]) != "map[]" {
 						if resultadoDireccion[0]["Status"] != "404" && resultadoDireccion[0]["Id"] != nil {
 							// Unmarshall dato
@@ -185,7 +186,7 @@ func GetUniversidadInfo(idUniversidad string) (APIResponseDTO requestresponse.AP
 
 					// GET para traer el telefono de la universidad (info_complementaria 51)
 					var resultadoTelefono []map[string]interface{}
-					errTelefono := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:51,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoTelefono)
+					errTelefono := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:TELEFONO,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoTelefono)
 					if errTelefono == nil && fmt.Sprintf("%v", resultadoTelefono[0]["System"]) != "map[]" {
 						if resultadoTelefono[0]["Status"] != "404" && resultadoTelefono[0]["Id"] != nil {
 							// Unmarshall dato
@@ -215,7 +216,7 @@ func GetUniversidadInfo(idUniversidad string) (APIResponseDTO requestresponse.AP
 
 					// GET para traer el correo de la universidad (info_complementaria 53)
 					var resultadoCorreo []map[string]interface{}
-					errCorreo := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:53,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoCorreo)
+					errCorreo := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:CORREO,TerceroId:"+fmt.Sprintf("%.f", idUniversidad), &resultadoCorreo)
 					if errCorreo == nil && fmt.Sprintf("%v", resultadoCorreo[0]["System"]) != "map[]" {
 						if resultadoCorreo[0]["Status"] != "404" && resultadoCorreo[0]["Id"] != nil {
 							// Unmarshall dato
@@ -262,7 +263,7 @@ func GetUniversidadInfo(idUniversidad string) (APIResponseDTO requestresponse.AP
 		}
 	} else {
 		logs.Error(errNit)
-		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, universidad, errNit.Error())
+		APIResponseDTO = requestresponse.APIResponseDTO(false, 400, universidad, errNit.Error()+". El nit no está registrado")
 		return APIResponseDTO
 	}
 
