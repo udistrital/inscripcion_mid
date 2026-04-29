@@ -572,6 +572,7 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	//solicitud de descuento
 	var tercero map[string]interface{}
 	var terceroPost map[string]interface{}
+	var datosComplementarios []models.InfoComplementaria
 
 	if err := json.Unmarshal(data, &tercero); err == nil {
 		//beego.Info(tercero)
@@ -580,7 +581,7 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 		}
 		guardarpersona := map[string]interface{}{
 			"NombreCompleto":      tercero["NombreCompleto"],
-			"Activo":              false,
+			"Activo":              true,
 			"LugarOrigen":         tercero["Pais"].(map[string]interface{})["Id"].(float64),
 			"TipoContribuyenteId": TipoContribuyenteId, // Persona natural actualmente tiene ese id en el api
 		}
@@ -588,25 +589,31 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 
 		if errPersona == nil && fmt.Sprintf("%v", terceroPost) != "map[]" && terceroPost["Id"] != nil {
 			if terceroPost["Status"] != 400 {
-				beego.Info("tercero", terceroPost)
-				idTerceroCreado := terceroPost["Id"]
+
+				idTerceroCreado := terceroPost["Id"].(float64)
 				var identificacion map[string]interface{}
 
-				TipoDocumentoId := map[string]interface{}{
-					"Id": 7,
-				}
 				TerceroId := map[string]interface{}{
 					"Id": idTerceroCreado,
 				}
 				TipoTerceroId := map[string]interface{}{
 					"Id": tercero["TipoTrecero"].(map[string]interface{})["Id"].(float64),
 				}
-				identificaciontercero := map[string]interface{}{
-					"Numero":             tercero["Nit"],
-					"DigitoVerificacion": tercero["Verificacion"],
-					"TipoDocumentoId":    TipoDocumentoId,
-					"TerceroId":          TerceroId,
-					"Activo":             true,
+				verificacion, err := strconv.Atoi(fmt.Sprint(tercero["Verificacion"]))
+				if err != nil {
+					// return err
+					// do something
+				}
+				identificaciontercero := models.IdentificacionTercero{
+					Numero:             fmt.Sprint(tercero["Nit"]),
+					DigitoVerificacion: verificacion,
+					Activo:             true,
+					TipoDocumentoId: models.IdWrapper{
+						Id: 7,
+					},
+					TerceroId: models.IdWrapper{
+						Id: idTerceroCreado,
+					},
 				}
 				errIdentificacion := request.SendJson(beego.AppConfig.String("TercerosService")+"datos_identificacion", "POST", &identificacion, identificaciontercero)
 				if errIdentificacion == nil && fmt.Sprintf("%v", identificacion) != "map[]" && identificacion["Id"] != nil {
@@ -644,122 +651,131 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 							return APIResponseDTO
 						}
 
-						InfoComplementariaTelefono := map[string]interface{}{
-							"Id": 48,
-						}
-						InfoComplementariaCorreo := map[string]interface{}{
-							"Id": 50,
-						}
-						InfoComplementariaDireccion := map[string]interface{}{
-							"Id": 51,
-						}
+						errDatosComplementarios := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria?query=Activo:true,CodigoAbreviacion__in:TELEFONO|CORREO|DIRECCIÓN&limit=0", &datosComplementarios)
+						if errDatosComplementarios == nil && len(datosComplementarios) != 2 {
+							infoMap := make(map[string]int)
+							for _, item := range datosComplementarios {
+								infoMap[item.CodigoAbreviacion] = item.Id
+							}
+							InfoComplementariaTelefono := map[string]interface{}{
+								"Id": infoMap["TELEFONO"],
+							}
+							InfoComplementariaCorreo := map[string]interface{}{
+								"Id": infoMap["CORREO"],
+							}
+							InfoComplementariaDireccion := map[string]interface{}{
+								"Id": infoMap["DIRECCIÓN"],
+							}
 
-						Telefono := map[string]interface{}{
-							"telefono": tercero["Telefono"],
-						}
-						jsonTelefono, _ := json.Marshal(Telefono)
+							Telefono := map[string]interface{}{
+								"telefono": tercero["Telefono"],
+							}
+							jsonTelefono, _ := json.Marshal(Telefono)
+							Correo := map[string]interface{}{
+								"email": tercero["Correo"],
+							}
+							jsonCorreo, _ := json.Marshal(Correo)
+							Direccion := map[string]interface{}{
+								"address": tercero["Direccion"],
+							}
+							jsonDireccion, _ := json.Marshal(Direccion)
 
-						Correo := map[string]interface{}{
-							"email": tercero["Correo"],
-						}
-						jsonCorreo, _ := json.Marshal(Correo)
+							telefonoTercero := map[string]interface{}{
+								"TerceroId":            TerceroId,
+								"InfoComplementariaId": InfoComplementariaTelefono,
+								"Activo":               true,
+								"Dato":                 string(jsonTelefono),
+							}
+							correoTercero := map[string]interface{}{
+								"TerceroId":            TerceroId,
+								"InfoComplementariaId": InfoComplementariaCorreo,
+								"Activo":               true,
+								"Dato":                 string(jsonCorreo),
+							}
+							direccionTercero := map[string]interface{}{
+								"TerceroId":            TerceroId,
+								"InfoComplementariaId": InfoComplementariaDireccion,
+								"Activo":               true,
+								"Dato":                 string(jsonDireccion),
+							}
 
-						Direccion := map[string]interface{}{
-							"address": tercero["Direccion"],
-						}
-						jsonDireccion, _ := json.Marshal(Direccion)
+							errGenero1 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &telefono, telefonoTercero)
+							if errGenero1 == nil && fmt.Sprintf("%v", telefono) != "map[]" && telefono["Id"] != nil {
+								//beego.Info(telefono)
+								if telefono["Status"] != 400 {
+									resultado = terceroPost
+									resultado["NumeroIdentificacion"] = identificacion["Numero"]
+									resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
+									resultado["Telefono"] = telefono["Id"]
+									APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
 
-						telefonoTercero := map[string]interface{}{
-							"TerceroId":            TerceroId,
-							"InfoComplementariaId": InfoComplementariaTelefono,
-							"Activo":               true,
-							"Dato":                 string(jsonTelefono),
-						}
-						correoTercero := map[string]interface{}{
-							"TerceroId":            TerceroId,
-							"InfoComplementariaId": InfoComplementariaCorreo,
-							"Activo":               true,
-							"Dato":                 string(jsonCorreo),
-						}
-						direccionTercero := map[string]interface{}{
-							"TerceroId":            TerceroId,
-							"InfoComplementariaId": InfoComplementariaDireccion,
-							"Activo":               true,
-							"Dato":                 string(jsonDireccion),
-						}
-
-						errGenero1 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &telefono, telefonoTercero)
-						if errGenero1 == nil && fmt.Sprintf("%v", telefono) != "map[]" && telefono["Id"] != nil {
-							//beego.Info(telefono)
-							if telefono["Status"] != 400 {
-								resultado = terceroPost
-								resultado["NumeroIdentificacion"] = identificacion["Numero"]
-								resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
-								resultado["Telefono"] = telefono["Id"]
-								APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
-
+								} else {
+									var resultado2 map[string]interface{}
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
+									logs.Error(errGenero1)
+									APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero1)
+									return APIResponseDTO
+								}
 							} else {
-								var resultado2 map[string]interface{}
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
-								logs.Error(errGenero1)
+								logs.Error("Error al almacenar telefono: ", errGenero1)
 								APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero1)
 								return APIResponseDTO
 							}
-						} else {
-							logs.Error(errGenero1)
-							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero1)
-							return APIResponseDTO
-						}
-						errGenero2 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &correo, correoTercero)
-						//beego.Info("correo tercero", correo)
-						if errGenero2 == nil && errGenero1 == nil && fmt.Sprintf("%v", correo) != "map[]" && correo["Id"] != nil {
-							if correo["Status"] != 400 {
-								//beego.Info(correo)
-								resultado = terceroPost
-								resultado["NumeroIdentificacion"] = identificacion["Numero"]
-								resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
-								resultado["Correo"] = correo["Id"]
-								APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
+							errGenero2 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &correo, correoTercero)
+							//beego.Info("correo tercero", correo)
+							if errGenero2 == nil && errGenero1 == nil && fmt.Sprintf("%v", correo) != "map[]" && correo["Id"] != nil {
+								if correo["Status"] != 400 {
+									//beego.Info(correo)
+									resultado = terceroPost
+									resultado["NumeroIdentificacion"] = identificacion["Numero"]
+									resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
+									resultado["Correo"] = correo["Id"]
+									APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
 
+								} else {
+									var resultado2 map[string]interface{}
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
+									logs.Error(errGenero2)
+									APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero2)
+									return APIResponseDTO
+								}
 							} else {
-								var resultado2 map[string]interface{}
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
-								logs.Error(errGenero2)
+								//beego.Info("error genero", errGenero2)
+								logs.Error("Error al almacenar correo: ", errGenero2)
 								APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero2)
 								return APIResponseDTO
 							}
-						} else {
-							//beego.Info("error genero", errGenero2)
-							logs.Error(errGenero2)
-							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero2)
-							return APIResponseDTO
-						}
-						errGenero3 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &direccion, direccionTercero)
-						if errGenero3 == nil && errGenero2 == nil && errGenero1 == nil && fmt.Sprintf("%v", direccion) != "map[]" && direccion["Id"] != nil {
-							if direccion["Status"] != 400 {
-								//beego.Info(direccion)
-								resultado = terceroPost
-								resultado["NumeroIdentificacion"] = identificacion["Numero"]
-								resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
-								resultado["Direccion"] = direccion["Id"]
-								APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
+							errGenero3 := request.SendJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero", "POST", &direccion, direccionTercero)
+							if errGenero3 == nil && errGenero2 == nil && errGenero1 == nil && fmt.Sprintf("%v", direccion) != "map[]" && direccion["Id"] != nil {
+								if direccion["Status"] != 400 {
+									//beego.Info(direccion)
+									resultado = terceroPost
+									resultado["NumeroIdentificacion"] = identificacion["Numero"]
+									resultado["TipoIdentificacionId"] = identificacion["TipoDocumentoId"].(map[string]interface{})["Id"]
+									resultado["Direccion"] = direccion["Id"]
+									APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
 
+								} else {
+									var resultado2 map[string]interface{}
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
+									request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
+									logs.Error(errGenero3)
+									APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero3)
+									return APIResponseDTO
+								}
 							} else {
-								var resultado2 map[string]interface{}
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero/%.f", estado["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"datos_identificacion/%.f", identificacion["Id"]), "DELETE", &resultado2, nil)
-								request.SendJson(fmt.Sprintf(beego.AppConfig.String("TercerosService")+"tercero/%.f", terceroPost["Id"]), "DELETE", &resultado2, nil)
-								logs.Error(errGenero3)
+								logs.Error("Error al almacenar dirección: ", errGenero3)
 								APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero3)
 								return APIResponseDTO
 							}
 						} else {
-							logs.Error(errGenero3)
-							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errGenero3)
+							logs.Error("Error al obtener datos complementarios tel, corr, dir: ", errDatosComplementarios)
+							APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errDatosComplementarios)
 							return APIResponseDTO
 						}
 					} else {
@@ -772,7 +788,7 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 					}
 				} else {
 					//beego.Info("error identificacion", errPersona)
-					logs.Error(errIdentificacion)
+					logs.Error("Error en el almacenamiento de datos_identificación: ", errIdentificacion)
 					APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, errIdentificacion)
 					return APIResponseDTO
 				}
