@@ -115,7 +115,7 @@ func GetInfoEmpresa(idEmpresa string) (APIResponseDTO requestresponse.APIRespons
 	partes := strings.Split(idEmpresa, "-")
 	numeroNit := partes[0]
 
-	endpoit := "datos_identificacion?query=TipoDocumentoId__Id:7,Numero:" + numeroNit
+	endpoit := "datos_identificacion?query=TipoDocumentoId__Id:7,Activo:true,Numero:" + numeroNit
 
 	//GET que asocia el nit con la empresa
 	errNit := request.GetJson(beego.AppConfig.String("TercerosService")+endpoit, &empresa)
@@ -158,7 +158,7 @@ func GetInfoEmpresa(idEmpresa string) (APIResponseDTO requestresponse.APIRespons
 
 					//GET para traer la dirección de la empresa (info_complementaria 54)
 					var resultadoDireccion []map[string]interface{}
-					errDireccion := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:54,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoDireccion)
+					errDireccion := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:DIRECCIÓN,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoDireccion)
 					if errDireccion == nil && fmt.Sprintf("%v", resultadoDireccion[0]["System"]) != "map[]" {
 						if resultadoDireccion[0]["Status"] != "404" && resultadoDireccion[0]["Id"] != nil {
 							var direccionJSON map[string]interface{}
@@ -187,7 +187,7 @@ func GetInfoEmpresa(idEmpresa string) (APIResponseDTO requestresponse.APIRespons
 
 					// GET para traer el telefono de la empresa (info_complementaria 51)
 					var resultadoTelefono []map[string]interface{}
-					errTelefono := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:51,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoTelefono)
+					errTelefono := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:TELEFONO,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoTelefono)
 					if errTelefono == nil && fmt.Sprintf("%v", resultadoTelefono[0]["System"]) != "map[]" {
 						if resultadoTelefono[0]["Status"] != "404" && resultadoTelefono[0]["Id"] != nil {
 							var telefonoJSON map[string]interface{}
@@ -216,7 +216,7 @@ func GetInfoEmpresa(idEmpresa string) (APIResponseDTO requestresponse.APIRespons
 
 					// GET para traer el correo de la empresa (info_complementaria 53)
 					var resultadoCorreo []map[string]interface{}
-					errCorreo := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__Id:53,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoCorreo)
+					errCorreo := request.GetJson(beego.AppConfig.String("TercerosService")+"info_complementaria_tercero?limit=1&query=Activo:true,InfoComplementariaId__CodigoAbreviacion:CORREO,TerceroId:"+fmt.Sprintf("%.f", idEmpresa), &resultadoCorreo)
 					if errCorreo == nil && fmt.Sprintf("%v", resultadoCorreo[0]["System"]) != "map[]" {
 						if resultadoCorreo[0]["Status"] != "404" && resultadoCorreo[0]["Id"] != nil {
 							var correoJSON map[string]interface{}
