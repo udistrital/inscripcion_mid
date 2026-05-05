@@ -11,6 +11,7 @@ import (
 
 	"github.com/astaxie/beego"
 	"github.com/astaxie/beego/logs"
+	"github.com/udistrital/inscripcion_mid/helpers"
 	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 	"github.com/udistrital/utils_oas/requestresponse"
@@ -599,10 +600,10 @@ func NuevoTercero(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 				TipoTerceroId := map[string]interface{}{
 					"Id": tercero["TipoTrecero"].(map[string]interface{})["Id"].(float64),
 				}
-				verificacion, err := strconv.Atoi(fmt.Sprint(tercero["Verificacion"]))
-				if err != nil {
-					// return err
-					// do something
+				// si el pais es Colombia (48 ubicaciones->lugar) se calcula el dígito de verificación
+				verificacion := 0
+				if lugar, ok := guardarpersona["LugarOrigen"].(float64); ok && lugar == 48 {
+					verificacion = helpers.CalcularDigitoVerificacion(tercero["Nit"].(string))
 				}
 				identificaciontercero := models.IdentificacionTercero{
 					Numero:             fmt.Sprint(tercero["Nit"]),
