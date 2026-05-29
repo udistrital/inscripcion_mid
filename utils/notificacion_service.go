@@ -4,7 +4,9 @@ import (
 	"time"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 
+	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/utils_oas/request"
 )
 
@@ -18,6 +20,44 @@ func SendTemplatedEmail(inputemailtemplated map[string]interface{}) (result erro
 	}
 	return result
 }
+
+func SendEmail(inputMail models.Correo) (result error) {
+	// Envio de mail
+	var resultadoPost map[string]interface{}
+	errSendEmail := request.SendJsonEscapeUnicode(beego.AppConfig.String("notificacionService")+"email/enviar_email", "POST", &resultadoPost, inputMail)
+	if errSendEmail == nil {
+		logs.Info("Correo enviado, respuesta de Notificaciones service:")
+		logs.Info(resultadoPost)
+		return nil
+	} else {
+		result = errSendEmail
+		logs.Info("Correo NO enviado, respuesta de Notificaciones service:")
+		logs.Info(result)
+	}
+	return result
+}
+
+func SendNotificacionCambioEstadoSolicitud(data map[string]interface{}, email string) (result error) {
+	// Armado de objeto
+
+	mail := models.Correo{
+		Destination: models.Destinatarios{
+			ToAddresses: []string{email},
+		},
+		Message: models.Mensaje{
+			Body: data,
+			Subject: models.Asunto{
+				Data: "Novedad en inscripción SGA",
+			},
+			Attachments: []interface{}{},
+		},
+		SourceEmail: "notificacionessga@udistrital.edu.co",
+		SourceName:  "Notificaciones inscripciones",
+	}
+
+	return SendEmail(mail)
+}
+
 func SendNotificationInscripcionSolicitud(data map[string]interface{}, email string) (result error) {
 	var toAddresses []string
 	var destinations []map[string]interface{}
@@ -39,7 +79,7 @@ func SendNotificationInscripcionSolicitud(data map[string]interface{}, email str
 	}
 
 	dataEmail := map[string]interface{}{
-		"Source":              "Notificacion <notificaciones_sga@udistrital.edu.co>",
+		"Source":              "Notificacion <notificacionessga@udistrital.edu.co>",
 		"Template":            "TEST_SGA_inscripcion-cambio-estado",
 		"Destinations":        append(destinations, destination),
 		"DefaultTemplateData": m,

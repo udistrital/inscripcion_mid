@@ -1235,6 +1235,7 @@ func ActualizarEstadoMatriculado(data []byte) (APIResponseDTO requestresponse.AP
 
 func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[string]interface{}, error) {
 	var resp map[string]interface{}
+	const estadoInscritoObservacion = 6
 
 	cambiaEstado := false
 	nuevoEstado := helpers.GetEstadoInscripcion(infoComp)
@@ -1250,6 +1251,11 @@ func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[str
 	errPutInfoComp := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%.f", id), "PUT", &resp, infoComp)
 	if errPutInfoComp == nil && resp["Status"] != "404" && resp["Status"] != "400" {
 		if cambiaEstado {
+			// si el estado es: "inscrito con Observación" enviar correo indicando al
+			if nuevoEstado != nil && *nuevoEstado == estadoInscritoObservacion {
+				// logs.Info("El nuevo estado es inscrito con observación")
+				helpers.EnviarNotificacionObservacionInscripcion(infoComp)
+			}
 			var respCambio map[string]interface{}
 			inscripcionEvolucionEstado := helpers.GenerarInscripcionEvolucionEstado(int(infoComp["Id"].(float64)), &helpers.IDStruct{Id: estadoActual}, helpers.IDStruct{Id: nuevoEstado}, helpers.ObtenerTerceroInscripcion(infoComp))
 			errorCambioEstado := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion_evolucion_estado", "POST", &respCambio, inscripcionEvolucionEstado)
