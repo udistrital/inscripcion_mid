@@ -13,6 +13,7 @@ import (
 	"github.com/astaxie/beego/httplib"
 	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/inscripcion_mid/helpers"
+	"github.com/udistrital/inscripcion_mid/utils"
 
 	// "github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
@@ -1250,6 +1251,10 @@ func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[str
 	errPutInfoComp := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion/"+fmt.Sprintf("%.f", id), "PUT", &resp, infoComp)
 	if errPutInfoComp == nil && resp["Status"] != "404" && resp["Status"] != "400" {
 		if cambiaEstado {
+			// si el estado es: "inscrito con Observación" enviar correo indicando al
+			if nuevoEstado != nil && *nuevoEstado == 6 {
+				enviarNotificacionObservacionInscripcion(infoComp)
+			}
 			var respCambio map[string]interface{}
 			inscripcionEvolucionEstado := helpers.GenerarInscripcionEvolucionEstado(int(infoComp["Id"].(float64)), &helpers.IDStruct{Id: estadoActual}, helpers.IDStruct{Id: nuevoEstado}, helpers.ObtenerTerceroInscripcion(infoComp))
 			errorCambioEstado := request.SendJson(beego.AppConfig.String("InscripcionService")+"inscripcion_evolucion_estado", "POST", &respCambio, inscripcionEvolucionEstado)
@@ -1261,6 +1266,23 @@ func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[str
 	} else {
 		return resp, errPutInfoComp
 	}
+}
+
+func enviarNotificacionObservacionInscripcion(dataInscripcion map[string]interface{}) {
+	var tercero map[string]interface{}
+	errPersona := request.GetJson(beego.AppConfig.String("TercerosService")+"tercero/"+fmt.Sprint(dataInscripcion["PersonaId"]), &tercero)
+	if errPersona == nil {
+		bodyEmail := map[string]interface{}{
+			"Html": map[string]interface{}{
+				"Data": "<p>Estimado(a) aspirante:</p> <p> Cordial saludo. </p> <p> Le informamos que se ha registrado una novedad en su inscripción <strong>" + dataInscripcion["ReciboInscripcion"].(string) + "</strong>. Uno o varios de los documentos cargados requieren revisión, actualización o corrección. </p> <p> Por favor, ingrese a la plataforma <strong>SGAv2</strong> y consulte las observaciones registradas con el fin de realizar los ajustes solicitados dentro de los plazos establecidos. </p> <p> Agradecemos su atención y pronta gestión. </p> <br> <p>Atentamente, <br> <strong>Universidad Distrital Francisco José de Caldas</strong> <br> Sistema de Gestión Académica - SGAv2 </p>",
+			},
+			"Text": map[string]interface{}{
+				"Data": "Novedad en Inscripción solicitada",
+			},
+		}
+		utils.SendNotificacionCambioEstadoSolicitud(bodyEmail, tercero["UsuarioWSO2"].(string))
+	}
+
 }
 
 func ActualizarEstadoInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse) {
