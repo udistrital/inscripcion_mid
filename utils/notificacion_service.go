@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -54,6 +55,9 @@ func SendNotificacionCambioEstadoSolicitud(data map[string]interface{}, email st
 		SourceEmail: "notificacionessga@udistrital.edu.co",
 		SourceName:  "Notificaciones inscripciones",
 	}
+	logs.Info("Objeto correo")
+	fmt.Println(mail)
+	fmt.Println("")
 
 	return SendEmail(mail)
 }
