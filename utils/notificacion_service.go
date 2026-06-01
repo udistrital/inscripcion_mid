@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/astaxie/beego"
@@ -25,9 +24,6 @@ func SendTemplatedEmail(inputemailtemplated map[string]interface{}) (result erro
 func SendEmail(inputMail models.Correo) (result error) {
 	// Envio de mail
 	var resultadoPost map[string]interface{}
-	logs.Info("Endpoint de notificación")
-	fmt.Println(beego.AppConfig.String("notificacionService") + "email/enviar_email")
-	fmt.Println("")
 	errSendEmail := request.SendJsonEscapeUnicode(beego.AppConfig.String("notificacionService")+"email/enviar_email", "POST", &resultadoPost, inputMail)
 	if errSendEmail == nil {
 		logs.Info("Correo enviado, respuesta de Notificaciones service:")
@@ -58,9 +54,6 @@ func SendNotificacionCambioEstadoSolicitud(data map[string]interface{}, email st
 		SourceEmail: "notificacionessga@udistrital.edu.co",
 		SourceName:  "Notificaciones inscripciones",
 	}
-	logs.Info("Objeto correo")
-	fmt.Println(mail)
-	fmt.Println("")
 
 	return SendEmail(mail)
 }
