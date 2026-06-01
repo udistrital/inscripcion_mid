@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/astaxie/beego"
+	"github.com/astaxie/beego/logs"
 	"github.com/udistrital/inscripcion_mid/models"
 	"github.com/udistrital/inscripcion_mid/utils"
 	"github.com/udistrital/utils_oas/request"
@@ -13,8 +14,9 @@ func EnviarNotificacionObservacionInscripcion(dataInscripcion map[string]interfa
 	// logs.Info("Entra al envío de correo")
 	var tercero models.TerceroId
 	errPersona := request.GetJson(beego.AppConfig.String("TercerosService")+"tercero/"+fmt.Sprint(dataInscripcion["PersonaId"]), &tercero)
-	// fmt.Println(errPersona)
-	// fmt.Println("")
+	logs.Info("datos del tercero")
+	fmt.Println(tercero)
+	fmt.Println("")
 	if errPersona == nil {
 		bodyEmail := map[string]interface{}{
 			"Html": map[string]interface{}{
@@ -24,9 +26,10 @@ func EnviarNotificacionObservacionInscripcion(dataInscripcion map[string]interfa
 				"Data": "Novedad en Inscripción solicitada",
 			},
 		}
-		// fmt.Println(bodyEmail)
-		// fmt.Println(tercero.UsuarioWSO2)
-		// fmt.Println("")
+		logs.Info("Cuerpo del correo")
+		fmt.Println(bodyEmail)
+		fmt.Println(tercero.UsuarioWSO2)
+		fmt.Println("")
 		utils.SendNotificacionCambioEstadoSolicitud(bodyEmail, tercero.UsuarioWSO2)
 	}
 }

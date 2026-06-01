@@ -1254,6 +1254,9 @@ func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[str
 			// si el estado es: "inscrito con Observación" enviar correo indicando al
 			if nuevoEstado != nil && *nuevoEstado == estadoInscritoObservacion {
 				// logs.Info("El nuevo estado es inscrito con observación")
+				logs.Info("información recibida")
+				fmt.Println(infoComp)
+				fmt.Println("")
 				helpers.EnviarNotificacionObservacionInscripcion(infoComp)
 			}
 			var respCambio map[string]interface{}
