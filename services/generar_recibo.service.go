@@ -134,8 +134,14 @@ func GenerarReciboPost(dataRecibo []byte) (APIResponseDTO requestresponse.APIRes
 
 func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var data map[string]interface{}
+	enviarMail := true
 
 	if parseErr := json.Unmarshal(dataRecibo, &data); parseErr == nil {
+		aspirante, ok := data["ASPIRANTE"].(map[string]interface{})
+		if !ok {
+			logs.Error("ASPIRANTE recibido no existe o no es un mapa")
+			enviarMail = false
+		}
 
 		var ReciboXML map[string]interface{}
 		ReciboInscripcion := data["INSCRIPCION"].(map[string]interface{})["idRecibo"].(string)
@@ -170,7 +176,12 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 						APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, pdf.Error())
 					}
 
-					if pdf.Ok() {
+					if pdf.Ok() && enviarMail {
+						correo, ok := aspirante["correo"].(string)
+						if !ok || strings.TrimSpace(correo) == "" {
+							logs.Error("Correo del aspirante inválido: %#v", aspirante["correo"])
+							enviarMail = false
+						}
 						encodedFile := encodePDF(pdf)
 						APIResponseDTO = requestresponse.APIResponseDTO(true, 200, encodedFile, nil)
 						fecha_actual := time.Now()
@@ -178,7 +189,7 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 							"dia":     fecha_actual.Day(),
 							"mes":     utils.GetNombreMes(fecha_actual.Month()),
 							"anio":    fecha_actual.Year(),
-							"nombre":  data["ASPIRANTE"].(map[string]interface{})["nombre"].(string),
+							"nombre":  aspirante["nombre"].(string),
 							"periodo": data["INSCRIPCION"].(map[string]interface{})["periodo"].(string),
 						}
 
@@ -189,7 +200,9 @@ func GenerarComprobante(dataRecibo []byte) (APIResponseDTO requestresponse.APIRe
 							"FileName":    "Comprobante_inscripcion_" + data["INSCRIPCION"].(map[string]interface{})["nombrePrograma"].(string),
 							"Base64File":  encodedFile,
 						})
-						utils.SendNotificationInscripcionComprobante(dataEmail, data["ASPIRANTE"].(map[string]interface{})["correo"].(string), attachments)
+						if enviarMail {
+							utils.SendNotificationInscripcionComprobante(dataEmail, correo, attachments)
+						}
 					}
 
 				} else {
