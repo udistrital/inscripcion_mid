@@ -13,10 +13,13 @@ import (
 func SendTemplatedEmail(inputemailtemplated map[string]interface{}) (result error) {
 	var resultadoPost map[string]interface{}
 	if errSendTemplatedEmail := request.SendJsonEscapeUnicode(beego.AppConfig.String("notificacionService")+"email/enviar_templated_email", "POST", &resultadoPost, inputemailtemplated); errSendTemplatedEmail == nil {
-
+		logs.Info("Correo plantilla enviado, respuesta notificaciones service:")
+		logs.Info(resultadoPost)
 		return nil
 	} else {
 		result = errSendTemplatedEmail
+		logs.Info("Correo plantilla No enviado, respuesta notificaciones service:")
+		logs.Info(resultadoPost)
 	}
 	return result
 }
@@ -110,7 +113,7 @@ func SendNotificationInscripcionComprobante(data map[string]interface{}, email s
 	}
 
 	dataEmail := map[string]interface{}{
-		"Source":              "Notificacion <notificaciones_sga@udistrital.edu.co>",
+		"Source":              "Notificacion <notificacionessga@udistrital.edu.co>",
 		"Template":            "TEST_SGA_inscripcion-pago",
 		"Destinations":        append(destinations, destination),
 		"DefaultTemplateData": m,
