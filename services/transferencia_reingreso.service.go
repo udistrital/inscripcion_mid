@@ -959,8 +959,8 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 	var proyectos []map[string]interface{}
 	var proyectosCodigos []map[string]interface{}
 	var jsondata map[string]interface{}
-	var Solicitudes []map[string]interface{}
-	var tipoSolicitud map[string]interface{}
+	// var Solicitudes []map[string]interface{}
+	// var tipoSolicitud map[string]interface{}
 	var datosEst []models.DatosIdentificacion
 	var datosEstudianteXML map[string]interface{}
 	var codigoProyectoStr string
@@ -1163,7 +1163,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 				resultado["ProyectoCurricular"] = proyectos
 				resultado["ProyectoCodigo"] = proyectosCodigos
 
-				// Información de la solicitud
+				/*// Información de la solicitud
 				errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 				if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 					var id = fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
@@ -1260,7 +1260,7 @@ func GetInscripcionById(idInscripcion string, data []byte) (APIResponseDTO reque
 							}
 						}
 					}
-				}
+				}*/
 				APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, "Request successful")
 
 			} else {
@@ -1706,8 +1706,8 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 	var ReciboXML map[string]interface{}
 	var resultadoAux []map[string]interface{}
 	var resultado []map[string]interface{}
-	var Solicitudes []map[string]interface{}
-	var tipoSolicitud map[string]interface{}
+	// var Solicitudes []map[string]interface{}
+	// var tipoSolicitud map[string]interface{}
 	var Estado string
 	var errorGetAll bool
 
@@ -1804,7 +1804,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 		}
 	}
 
-	errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
+	/*errTipoSolicitud := request.GetJson(beego.AppConfig.String("SolicitudDocenteService")+"tipo_solicitud?query=CodigoAbreviacion:TrnRe", &tipoSolicitud)
 	if errTipoSolicitud == nil && fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0]) != "map[]" {
 		var id = fmt.Sprintf("%v", tipoSolicitud["Data"].([]interface{})[0].(map[string]interface{})["Id"])
 
@@ -1845,7 +1845,7 @@ func EstadoInscripcionGet(idPersona string) (APIResponseDTO requestresponse.APIR
 				}
 			}
 		}
-	}
+	}*/
 
 	resultado = resultadoAux
 
