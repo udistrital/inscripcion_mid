@@ -50,7 +50,7 @@ func (c *DescuentoController) PostDescuentoAcademico() {
 // @Param	body		body 	{}	true		"body Modificar Descuento Academico content"
 // @Success 200 {}
 // @Failure 400 the request contains incorrect syntax
-// @router /:id [put]
+// @router /solicitud/:id [put]
 func (c *DescuentoController) PutDescuentoAcademico() {
 
 	defer errorhandler.HandlePanic(&c.Controller)
