@@ -8,7 +8,7 @@ require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/smartystreets/goconvey v1.8.1
-	github.com/udistrital/utils_oas v0.5.5-beta.5
+	github.com/udistrital/utils_oas v0.5.5-beta.6
 	golang.org/x/sync v0.19.0
 )
 
