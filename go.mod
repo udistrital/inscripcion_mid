@@ -1,6 +1,6 @@
 module github.com/udistrital/inscripcion_mid
 
-go 1.25.0
+go 1.25
 
 require (
 	github.com/agnivade/levenshtein v1.2.1
@@ -8,8 +8,8 @@ require (
 	github.com/boombuler/barcode v1.1.0
 	github.com/phpdave11/gofpdf v1.4.3
 	github.com/smartystreets/goconvey v1.8.1
-	github.com/udistrital/utils_oas v0.5.4
-	golang.org/x/sync v0.21.0
+	github.com/udistrital/utils_oas v0.5.6
+	golang.org/x/sync v0.19.0
 )
 
 require (
