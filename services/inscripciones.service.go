@@ -1272,6 +1272,15 @@ func ActualizarInscripcion(infoComp map[string]interface{}, id float64) (map[str
 func ActualizarEstadoInscripcion(data []byte) (APIResponseDTO requestresponse.APIResponse) {
 	var inscripcion map[string]interface{}
 	if err := json.Unmarshal(data, &inscripcion); err == nil {
+		nuevoEstado := helpers.GetEstadoInscripcion(inscripcion)
+		if nuevoEstado != nil && *nuevoEstado == 5 {
+			if validacion, ok := inscripcion["ValidacionRequisitos"].(bool); !ok || !validacion {
+				logs.Error("Intento de finalizar inscripción sin validación de requisitos")
+				APIResponseDTO = requestresponse.APIResponseDTO(false, 400, nil, "No se ha completado la validación de requisitos")
+				return
+			}
+		}
+
 		if resInsc, errInsc := ActualizarInscripcion(inscripcion, inscripcion["Id"].(float64)); errInsc == nil {
 			APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resInsc, nil)
 		} else {
