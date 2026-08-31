@@ -142,6 +142,7 @@ func VerificarRecibos(personaId string, periodoId string, TipoParametro string) 
 									"Estado":              Estado,
 									"Activo":              Inscripciones[i]["Activo"],
 									"EstadoInscripcion":   Inscripciones[i]["EstadoInscripcionId"].(map[string]interface{})["Nombre"],
+									"FechaExtraordinario": FechaLimite,
 								}
 							} else {
 								if fmt.Sprintf("%v", resultadoAux) != "map[]" {
