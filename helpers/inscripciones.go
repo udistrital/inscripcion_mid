@@ -320,13 +320,20 @@ func BuscarParametroperiodo(TipoParametro string, anio int, target *map[string]i
 
 		err := request.GetJson(urlParametro, target)
 		if err != nil {
-			beego.Error(fmt.Sprintf("Error consultando parámetro para año %d: %v", anioConsulta, err))
 			continue
 		}
 
-		if data, ok := (*target)["Data"].([]interface{}); ok && len(data) > 0 {
-			return nil
+		data, ok := (*target)["Data"].([]interface{})
+		if !ok || len(data) == 0 {
+			continue
 		}
+
+		item, ok := data[0].(map[string]interface{})
+		if !ok || item["Valor"] == nil || item["ParametroId"] == nil {
+			continue
+		}
+
+		return nil
 	}
 	return fmt.Errorf("no se encontró parámetro válido hasta 2 años hacia atrás desde %d", anioInt)
 }
