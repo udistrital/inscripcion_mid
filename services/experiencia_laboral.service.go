@@ -2,7 +2,6 @@ package services
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -301,38 +300,67 @@ func GetInfoEmpresa(idEmpresa string) (APIResponseDTO requestresponse.APIRespons
 	return APIResponseDTO
 }
 
-func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestresponse.APIResponse) {
+func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestresponse.APIResponseMeta) {
 	var resultado []map[string]interface{}
 	resultado = make([]map[string]interface{}, 0)
-	var errorGetAll bool
+	var errores []map[string]interface{}
+	errores = make([]map[string]interface{}, 0)
 	wge := new(errgroup.Group)
-	var mutex sync.Mutex // Mutex para proteger el acceso a resultados
+	var mutex sync.Mutex // Mutex para proteger el acceso a resultados y errores
 	var DataMap []map[string]interface{}
 
 	endpoint := beego.AppConfig.String("TercerosService") + "info_complementaria_tercero?query=TerceroId__Id:" + fmt.Sprintf("%v", idTercero) + ",InfoComplementariaId__CodigoAbreviacion:EXP_LABORAL,Activo:true&limit=0&sortby=Id&order=asc"
 
 	errData := request.GetJson(endpoint, &DataMap)
 	if errData != nil {
-		errorGetAll = true
-		APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, errData.Error())
+		APIResponseDTO = requestresponse.APIResponseMetadataDTO(false, 404, nil, nil, errData.Error())
 		return APIResponseDTO
 	}
 
 	if DataMap == nil || fmt.Sprintf("%v", DataMap) == "[map[]]" {
-		APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, "No hay experiencia laboral registrada")
+		metadata := map[string]interface{}{
+			"TotalRegistros":     0,
+			"RegistrosDevueltos": 0,
+			"RegistrosOmitidos":  0,
+			"Errores":            []map[string]interface{}{},
+		}
+		APIResponseDTO = requestresponse.APIResponseMetadataDTO(true, 200, resultado, metadata, "No hay experiencia laboral registrada")
 		return APIResponseDTO
+	}
+
+	// Registra un registro omitido por no poder enriquecerse, sin romper la respuesta global
+	registrarOmitido := func(id interface{}, nit interface{}, motivo string) {
+		mutex.Lock()
+		errores = append(errores, map[string]interface{}{
+			"Id":     id,
+			"Nit":    nit,
+			"Motivo": motivo,
+		})
+		mutex.Unlock()
 	}
 
 	wge.SetLimit(-1)
 	for _, Data := range DataMap {
 		Data := Data
-		wge.Go(func() error {
+		wge.Go(func() (err error) {
 			var experiencia map[string]interface{}
 			var empresa []map[string]interface{}
 			var empresaTercero map[string]interface{}
 			resultadoAux := make(map[string]interface{})
+
+			defer func() {
+				if r := recover(); r != nil {
+					logs.Error("GetExperienciaLaboralByPersona | terceroId=%v | registroId=%v | paso=panic | err=%v",
+						idTercero, Data["Id"], r)
+					registrarOmitido(Data["Id"], experiencia["Nit"], "DATOS_EXPERIENCIA_INVALIDOS")
+				}
+			}()
+
 			if err := json.Unmarshal([]byte(Data["Dato"].(string)), &experiencia); err != nil {
-				return err
+				logs.Error("GetExperienciaLaboralByPersona | terceroId=%v | registroId=%v | paso=unmarshalDato | Dato=%v | err=%v",
+					idTercero, Data["Id"], Data["Dato"], err)
+				registrarOmitido(Data["Id"], nil, "DATOS_EXPERIENCIA_INVALIDOS")
+				return nil
 			}
 
 			// Protegemos la escritura a resultadoAux
@@ -362,11 +390,15 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 
 			errDatosIdentificacion := request.GetJson(beego.AppConfig.String("TercerosService")+endpoint, &empresa)
 			if errDatosIdentificacion != nil {
-				return errDatosIdentificacion
+				registrarOmitido(Data["Id"], experiencia["Nit"], "DATOS_IDENTIFICACION_NO_DISPONIBLE")
+				return nil
 			}
 
 			if empresa == nil || len(empresa[0]) == 0 {
-				return errors.New("No empresa data found")
+				logs.Error("GetExperienciaLaboralByPersona | terceroId=%v | registroId=%v | Nit=%v | paso=empresaNoEncontrada | endpoint=%v | resp=%v",
+					idTercero, Data["Id"], experiencia["Nit"], endpoint, empresa)
+				registrarOmitido(Data["Id"], experiencia["Nit"], "EMPRESA_NO_ENCONTRADA")
+				return nil
 			}
 
 			idEmpresa := empresa[0]["TerceroId"].(map[string]interface{})["Id"]
@@ -374,11 +406,15 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 			// GET que trae la información de la empresa
 			errEmpresa := request.GetJson(beego.AppConfig.String("TercerosService")+"tercero/"+fmt.Sprintf("%v", idEmpresa), &empresaTercero)
 			if errEmpresa != nil || fmt.Sprintf("%v", empresaTercero["System"]) == "map[]" || empresaTercero["Id"] == nil {
-				return errEmpresa
+				registrarOmitido(Data["Id"], experiencia["Nit"], "EMPRESA_INFO_NO_DISPONIBLE")
+				return nil
 			}
 
 			if empresaTercero["Status"] == "400" {
-				return errors.New("Empresa status 400")
+				logs.Error("GetExperienciaLaboralByPersona | terceroId=%v | registroId=%v | Nit=%v | paso=terceroStatus400 | idEmpresa=%v | resp=%v",
+					idTercero, Data["Id"], experiencia["Nit"], idEmpresa, empresaTercero)
+				registrarOmitido(Data["Id"], experiencia["Nit"], "EMPRESA_INFO_NO_DISPONIBLE")
+				return nil
 			}
 
 			// Protegemos la escritura a resultadoAux y resultado
@@ -392,7 +428,6 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 			var lugar map[string]interface{}
 			errLugar := request.GetJson(beego.AppConfig.String("UbicacionesService")+"relacion_lugares/jerarquia_lugar/"+fmt.Sprintf("%v", empresaTercero["LugarOrigen"]), &lugar)
 
-			logs.Info(lugar)
 			if errLugar != nil || fmt.Sprintf("%v", lugar) == "map[]" || lugar["Status"] == "404" {
 				mutex.Lock()
 				resultadoAux["Ubicacion"] = nil
@@ -402,14 +437,16 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 				resultadoAux["TipoTerceroId"] = nil
 				resultado = append(resultado, resultadoAux)
 				mutex.Unlock()
-				return errLugar
+				return nil
 			}
 
-			mutex.Lock()
-			resultadoAux["Ubicacion"] = map[string]interface{}{
-				"Id":     lugar["PAIS"].(map[string]interface{})["Id"],
-				"Nombre": lugar["PAIS"].(map[string]interface{})["Nombre"],
+			pais, _ := lugar["PAIS"].(map[string]interface{})
+			ubicacion := map[string]interface{}{
+				"Id":     pais["Id"],
+				"Nombre": pais["Nombre"],
 			}
+			mutex.Lock()
+			resultadoAux["Ubicacion"] = ubicacion
 			mutex.Unlock()
 
 			var resultadoDireccion []map[string]interface{}
@@ -472,11 +509,13 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 			var resultadoOrganizacion []map[string]interface{}
 			errorganizacion := request.GetJson(beego.AppConfig.String("TercerosService")+"tercero_tipo_tercero/?limit=1&query=TerceroId__Id:"+fmt.Sprintf("%.f", idEmpresa), &resultadoOrganizacion)
 			if errorganizacion == nil && fmt.Sprintf("%v", resultadoOrganizacion[0]["System"]) != "map[]" && resultadoOrganizacion[0]["Status"] != "404" && resultadoOrganizacion[0]["Id"] != nil {
-				mutex.Lock()
-				resultadoAux["TipoTerceroId"] = map[string]interface{}{
-					"Id":     resultadoOrganizacion[0]["TipoTerceroId"].(map[string]interface{})["Id"],
-					"Nombre": resultadoOrganizacion[0]["TipoTerceroId"].(map[string]interface{})["Nombre"],
+				tipoTercero, _ := resultadoOrganizacion[0]["TipoTerceroId"].(map[string]interface{})
+				tipoTerceroAux := map[string]interface{}{
+					"Id":     tipoTercero["Id"],
+					"Nombre": tipoTercero["Nombre"],
 				}
+				mutex.Lock()
+				resultadoAux["TipoTerceroId"] = tipoTerceroAux
 				mutex.Unlock()
 			} else {
 				mutex.Lock()
@@ -492,15 +531,18 @@ func GetExperienciaLaboralByPersona(idTercero string) (APIResponseDTO requestres
 	}
 
 	if err := wge.Wait(); err != nil {
-		errorGetAll = true
-		APIResponseDTO = requestresponse.APIResponseDTO(false, 404, nil, err.Error())
+		logs.Error("GetExperienciaLaboralByPersona | terceroId=%v | errorInesperadoEnEnriquecimiento | registrosEncontrados=%v | registrosDevueltos=%v | err=%v",
+			idTercero, len(DataMap), len(resultado), err)
 	}
 
-	if !errorGetAll {
-		APIResponseDTO = requestresponse.APIResponseDTO(true, 200, resultado, nil)
-	} else {
-		APIResponseDTO = requestresponse.APIResponseDTO(false, 404, resultado, "No data found")
+	metadata := map[string]interface{}{
+		"TotalRegistros":     len(DataMap),
+		"RegistrosDevueltos": len(resultado),
+		"RegistrosOmitidos":  len(DataMap) - len(resultado),
+		"Errores":            errores,
 	}
+
+	APIResponseDTO = requestresponse.APIResponseMetadataDTO(true, 200, resultado, metadata)
 	return APIResponseDTO
 }
 
